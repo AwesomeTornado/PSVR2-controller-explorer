@@ -4,7 +4,10 @@ If you are like me, and are frustrated by the abundance of closed source project
 - Adaptive Triggers
 - Multiple Rumble Modes
 
-(Note: the actual haptics are still a work in progress.)
+Though not likely to happen, it is also my goal to get the following working:
+- Audio based haptics (through bluetooth)
+- Headset haptics
+- Headset eye tracking
 
 Please feel free to add a pull request with a text file containing any of your own personal findings! Projects like these thrive on shared information, so I hope you are able to find my discoveries helpfull, and maybe even contribute some of your own.
 
