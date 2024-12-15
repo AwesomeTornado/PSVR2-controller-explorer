@@ -7,3 +7,7 @@ If you are like me, and are frustrated by the abundance of closed source project
 (Note: the actual haptics are still a work in progress.)
 
 Please feel free to add a pull request with a text file containing any of your own personal findings! Projects like these thrive on shared information, so I hope you are able to find my discoveries helpfull, and maybe even contribute some of your own.
+
+
+**A note about the source code of this project.
+This project is built on top of https://github.com/nondebug/dualsense and is really more of an ugly patch-on than a full personal creation. Variable names may be mismatched, comments may be incorrect, stuff may be rudundant. If you find any of this, and are frustrated by it, I encourage you to make a Pull Request that fixes it. I would greatly appreciate it.
