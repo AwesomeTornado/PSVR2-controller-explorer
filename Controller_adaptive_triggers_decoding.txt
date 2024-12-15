@@ -1,0 +1,24 @@
+0:
+No effect
+1:
+param 1: start location
+param 2: force
+2:
+param 1: start location
+param 2: end location
+param 3: force (I think?)
+3:
+Unknown, probably/possibly unused.
+4:
+Unknown, probably/possibly unused.
+5:
+Unknown, probably/possibly unused.
+6:
+param 1: Kick frequency
+param 2: Kick magnitude
+param 3: start location
+I feel like there should be a force setting, couldn't find it though.
+33:
+param 1: simple resist start location
+param 2: 
+weird shit, cool though. Not sure how it works.
