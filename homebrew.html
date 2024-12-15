@@ -25,28 +25,28 @@
 		<h3>Input report</h3>
 		<textarea id="inputreport" cols="48" rows="6" disabled=""></textarea><br />
 
-		<input type="checkbox" id="buttoncross" class="cb-disabled" disabled="" />Grip button<br />
-		<input type="checkbox" id="buttontriangle" disabled="" />Trigger button<br />
+		<input type="checkbox" id="grip_button" class="cb-disabled" disabled="" />Grip button<br />
+		<input type="checkbox" id="trigger_button" disabled="" />Trigger button<br />
 
-		<input type="checkbox" id="buttonr1" disabled="" />Share/Options button<br />
-		<input type="checkbox" id="buttonl2" disabled="" /><input type="text" id="triggerl2" style="text-align: right; width: 50" disabled="" />Grip Capsense<br />
-		<input type="checkbox" id="buttonr2" disabled="" />Joystick button<br />
+		<input type="checkbox" id="S_O_Button" disabled="" />Share/Options button<br />
+		<input type="text" id="grip_capsense" style="text-align: right; width: 50" disabled="" />Grip Capsense<br />
+		<input type="checkbox" id="joystick_button" disabled="" />Joystick button<br />
 
-		<input type="checkbox" id="buttoncreate" disabled="" />PS Button<br />
+		<input type="checkbox" id="ps_button" disabled="" />PS Button<br />
 
 		<input type="checkbox" id="upperbutton" disabled="" />upper button<br />
 		<input type="checkbox" id="lowerbutton" disabled="" />lower button<br />
 
-		<input type="checkbox" id="buttonps" disabled="" />Touching upper button<br />
-		<input type="checkbox" id="buttontouchpad" disabled="" />Touching lower button<br />
-		<input type="checkbox" id="buttonmute" disabled="" />Touching joystick<br />
-		<input type="checkbox" id="gripbuttontouch" disabled="" />Touching grip button<br />
+		<input type="checkbox" id="upper_touch" disabled="" />Touching upper button<br />
+		<input type="checkbox" id="lower_touch" disabled="" />Touching lower button<br />
+		<input type="checkbox" id="joystick_touch" disabled="" />Touching joystick<br />
+		<input type="checkbox" id="grip_touch" disabled="" />Touching grip button<br />
 		<input type="checkbox" id="triggertouch" disabled="" />Touching trigger<br />
 
-		<input type="text" id="leftstickx" style="text-align: right; width: 50" disabled="" />Left thumbstick X<br />
-		<input type="text" id="leftsticky" style="text-align: right; width: 50" disabled="" />Left thumbstick Y<br />
-		<input type="text" id="rightstickx" style="text-align: right; width: 50" disabled="" />Trigger<br />
-		<input type="text" id="rightsticky" style="text-align: right; width: 50" disabled="" />Trigger Capsense<br />
+		<input type="text" id="leftstickx" style="text-align: right; width: 50" disabled="" />Thumbstick X<br />
+		<input type="text" id="leftsticky" style="text-align: right; width: 50" disabled="" />Thumbstick Y<br />
+		<input type="text" id="trigger" style="text-align: right; width: 50" disabled="" />Trigger<br />
+		<input type="text" id="trigger_capsense" style="text-align: right; width: 50" disabled="" />Trigger Capsense<br />
 
 		<input type="text" id="gyrox" style="text-align: right; width: 50" disabled="" />Gyroscope X<br />
 		<input type="text" id="gyroy" style="text-align: right; width: 50" disabled="" />Gyroscope Y<br />
@@ -110,29 +110,28 @@
 
 			const inputReportTextArea = document.getElementById("inputreport");
 
-			const buttonCrossCheckbox = document.getElementById("buttoncross");
-			const buttonTriangleCheckbox = document.getElementById("buttontriangle");
+			const grip_button_checkbox = document.getElementById("grip_button");
+			const trigger_button_checkbox = document.getElementById("trigger_button");
 
-			const buttonR1Checkbox = document.getElementById("buttonr1");
-			const buttonL2Checkbox = document.getElementById("buttonl2");
-			const buttonR2Checkbox = document.getElementById("buttonr2");
-			const triggerL2Text = document.getElementById("triggerl2");
+			const S_O_Button_Checkbox = document.getElementById("S_O_Button");
+			const joystick_button_checkbox = document.getElementById("joystick_button");
+			const grip_capsense_text = document.getElementById("grip_capsense");
 
-			const buttonCreateCheckbox = document.getElementById("buttoncreate");
+			const ps_button_checkbox = document.getElementById("ps_button");
 
 			const upperbuttoncheck = document.getElementById("upperbutton");
 			const lowerbuttoncheck = document.getElementById("lowerbutton");
 
-			const buttonPSCheckbox = document.getElementById("buttonps");
-			const buttonTouchpadCheckbox = document.getElementById("buttontouchpad");
-			const buttonMuteCheckbox = document.getElementById("buttonmute");
-			const gripTouchCheckbox = document.getElementById("gripbuttontouch");
+			const upper_touch_checkbox = document.getElementById("upper_touch");
+			const lower_touch_checkbox = document.getElementById("lower_touch");
+			const joystick_touch_checkbox = document.getElementById("joystick_touch");
+			const grip_touch_checkbox = document.getElementById("grip_touch");
 			const triggerTouchCheckbox = document.getElementById("triggertouch");
 
 			const leftStickXText = document.getElementById("leftstickx");
 			const leftStickYText = document.getElementById("leftsticky");
-			const rightStickXText = document.getElementById("rightstickx");
-			const rightStickYText = document.getElementById("rightsticky");
+			const trigger_text = document.getElementById("trigger");
+			const trigger_capsense_text = document.getElementById("trigger_capsense");
 
 			const gyroXText = document.getElementById("gyrox");
 			const gyroYText = document.getElementById("gyroy");
@@ -456,27 +455,26 @@
 					let batteryFull = !!(battery0 & 0x20);
 					let batteryCharging = !!(battery1 & 0x08);
 
-					buttonCrossCheckbox.checked = cross;
-					buttonTriangleCheckbox.checked = triangle;
-					buttonR1Checkbox.checked = r1;
-					buttonL2Checkbox.checked = l2;
-					buttonR2Checkbox.checked = r2;
-					triggerL2Text.value = Math.round(l2axis * 100) + "%";
-					buttonCreateCheckbox.checked = create;
+					grip_button_checkbox.checked = cross;
+					trigger_button_checkbox.checked = triangle;
+					S_O_Button_Checkbox.checked = r1;
+					joystick_button_checkbox.checked = r2;
+					grip_capsense_text.value = Math.round(l2axis * 100) + "%";
+					ps_button_checkbox.checked = create;
 
 					upperbuttoncheck.checked = upperbutton;
 					lowerbuttoncheck.checked = lowerbutton;
 
-					buttonPSCheckbox.checked = ps;
-					buttonTouchpadCheckbox.checked = touchpad;
-					buttonMuteCheckbox.checked = mute;
-					gripTouchCheckbox.checked = grip;
+					upper_touch_checkbox.checked = ps;
+					lower_touch_checkbox.checked = touchpad;
+					joystick_touch_checkbox.checked = mute;
+					grip_touch_checkbox.checked = grip;
 					triggerTouchCheckbox.checked = trigger;
 
 					leftStickXText.value = Number(lsx).toFixed(2);
 					leftStickYText.value = Number(lsy).toFixed(2);
-					rightStickXText.value = Math.round(rsx * 100) + "%";
-					rightStickYText.value = Math.round(rsy * 100) + "%";
+					trigger_text.value = Math.round(rsx * 100) + "%";
+					trigger_capsense_text.value = Math.round(rsy * 100) + "%";
 
 					gyroXText.value = gyrox;
 					gyroYText.value = gyroy;
@@ -537,27 +535,26 @@
 					this.enablehaptics = grip;
 					let trigger = normalizeButton(buttons1 & 0x80);
 
-					buttonCrossCheckbox.checked = cross;
-					buttonTriangleCheckbox.checked = triangle;
-					buttonR1Checkbox.checked = r1;
-					buttonL2Checkbox.checked = l2;
-					buttonR2Checkbox.checked = r2;
-					triggerL2Text.value = Math.round(l2axis * 100) + "%";
-					buttonCreateCheckbox.checked = create;
+					grip_button_checkbox.checked = cross;
+					trigger_button_checkbox.checked = triangle;
+					S_O_Button_Checkbox.checked = r1;
+					joystick_button_checkbox.checked = r2;
+					grip_capsense_text.value = Math.round(l2axis * 100) + "%";
+					ps_button_checkbox.checked = create;
 
 					upperbuttoncheck.checked = upperbutton;
 					lowerbuttoncheck.checked = lowerbutton;
 
-					buttonPSCheckbox.checked = ps;
-					buttonTouchpadCheckbox.checked = touchpad;
-					buttonMuteCheckbox.checked = mute;
-					gripTouchCheckbox.checked = grip;
+					upper_touch_checkbox.checked = ps;
+					lower_touch_checkbox.checked = touchpad;
+					joystick_touch_checkbox.checked = mute;
+					grip_touch_checkbox.checked = grip;
 					triggerTouchCheckbox.checked = trigger;
 
 					leftStickXText.value = Number(lsx).toFixed(2);
 					leftStickYText.value = Number(lsy).toFixed(2);
-					rightStickXText.value = Math.round(rsx * 100) + "%";
-					rightStickYText.value = Math.round(rsy * 100) + "%";
+					trigger_text.value = Math.round(rsx * 100) + "%";
+					trigger_capsense_text.value = Math.round(rsy * 100) + "%";
 
 					batteryChargingCheckbox.checked = false;
 					batteryFullCheckbox.checked = false;
@@ -658,27 +655,26 @@
 					let batteryFull = !!(battery0 & 0x20);
 					let batteryCharging = !!(battery1 & 0x08);
 
-					buttonCrossCheckbox.checked = cross;
-					buttonTriangleCheckbox.checked = triangle;
-					buttonR1Checkbox.checked = r1;
-					buttonL2Checkbox.checked = l2;
-					buttonR2Checkbox.checked = r2;
-					triggerL2Text.value = Math.round(l2axis * 100) + "%";
-					buttonCreateCheckbox.checked = create;
+					grip_button_checkbox.checked = cross;
+					trigger_button_checkbox.checked = triangle;
+					S_O_Button_Checkbox.checked = r1;
+					joystick_button_checkbox.checked = r2;
+					grip_capsense_text.value = Math.round(l2axis * 100) + "%";
+					ps_button_checkbox.checked = create;
 
 					upperbuttoncheck.checked = upperbutton;
 					lowerbuttoncheck.checked = lowerbutton;
 
-					buttonPSCheckbox.checked = ps;
-					buttonTouchpadCheckbox.checked = touchpad;
-					buttonMuteCheckbox.checked = mute;
-					gripTouchCheckbox.checked = grip;
+					upper_touch_checkbox.checked = ps;
+					lower_touch_checkbox.checked = touchpad;
+					joystick_touch_checkbox.checked = mute;
+					grip_touch_checkbox.checked = grip;
 					triggerTouchCheckbox.checked = trigger;
 
 					leftStickXText.value = Number(lsx).toFixed(2);
 					leftStickYText.value = Number(lsy).toFixed(2);
-					rightStickXText.value = Math.round(rsx * 100) + "%";
-					rightStickYText.value = Math.round(rsy * 100) + "%";
+					trigger_text.value = Math.round(rsx * 100) + "%";
+					trigger_capsense_text.value = Math.round(rsy * 100) + "%";
 
 					gyroXText.value = gyrox;
 					gyroYText.value = gyroy;
