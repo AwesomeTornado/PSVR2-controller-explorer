@@ -13,9 +13,15 @@ param 2: Kick magnitude
 param 3: start location
 I feel like there should be a force setting, couldn't find it though.
 33, 0x21:
-param 1: simple resist start location
+param 1: simple resist start location (NOPE)
 param 2: 
 weird shit, cool though. Not sure how it works.
+
+param 1: Binary location for first stop. Larger numbers lead to later stops. Only MSB matters
+Note, the above description does not work fully. I have something wrong.
+
+
+
 34, 0x22:
 untested
 35, 0x23:
