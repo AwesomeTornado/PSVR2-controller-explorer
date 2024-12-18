@@ -99,28 +99,22 @@
 			<input type="checkbox" id="playerLed5" />Player LED 5<br />
 			<input type="checkbox" id="muteLed" />Microphone Mute LED<br />
 
-			<input type="number" id="r2effectmode" style="text-align: right; width: 50" min="0" max="255"
-				value="26" />R2
-			trigger effect mode<br />
-			<input type="number" id="r2effectparam1" style="text-align: right; width: 50" min="0" max="255"
-				value="90" />Resistance start location<br />
-			<input type="number" id="r2effectparam2" style="text-align: right; width: 50" min="0" max="255"
-				value="176" />Trigger param. Check source for details.<br />
-			<input type="number" id="r2effectparam3" style="text-align: right; width: 50" min="0" max="255"
-				value="255" />Mode2:
-			Force exerted<br />
-			<input type="number" id="r2effectparam4" style="text-align: right; width: 50" min="0" max="255"
-				value="0" />R2
-			trigger effect parameter 4<br />
-			<input type="number" id="r2effectparam5" style="text-align: right; width: 50" min="0" max="255"
-				value="0" />R2
-			trigger effect parameter 5<br />
-			<input type="number" id="r2effectparam6" style="text-align: right; width: 50" min="0" max="255"
-				value="0" />R2
-			trigger effect parameter 6<br />
-			<input type="number" id="r2effectparam7" style="text-align: right; width: 50" min="0" max="255"
-				value="0" />R2
-			trigger effect parameter 7<br />
+			<div><div style="float: left"><input type="number" id="r2effectmode" style="text-align: right; width: 50" min="0" max="255"
+				value="26" /></div><div id="rtrigger0"></div><br /></div>
+			<div><div style="float: left"><input type="number" id="r2effectparam1" style="text-align: right; width: 50" min="0" max="255"
+				value="90" /></div><div id="rtrigger1"></div><br /></div>
+			<div><div style="float: left"><input type="number" id="r2effectparam2" style="text-align: right; width: 50" min="0" max="255"
+				value="176" /></div><div id="rtrigger2"></div><br /></div>
+			<div><div style="float: left"><input type="number" id="r2effectparam3" style="text-align: right; width: 50" min="0" max="255"
+				value="255" /></div><div id="rtrigger3"></div><br /></div>
+			<div><div style="float: left"><input type="number" id="r2effectparam4" style="text-align: right; width: 50" min="0" max="255"
+				value="0" /></div><div id="rtrigger4"></div><br /></div>
+			<div><div style="float: left"><input type="number" id="r2effectparam5" style="text-align: right; width: 50" min="0" max="255"
+				value="0" /></div><div id="rtrigger5"></div><br /></div>
+			<div><div style="float: left"><input type="number" id="r2effectparam6" style="text-align: right; width: 50" min="0" max="255"
+				value="0" /></div><div id="rtrigger6"></div><br /></div>
+			<div><div style="float: left"><input type="number" id="r2effectparam7" style="text-align: right; width: 50" min="0" max="255"
+				value="0" /></div><div id="rtrigger7"></div><br /></div>
 		</div>
 	</div>
 	<script>
@@ -371,55 +365,66 @@
 					this.r2EffectParam6_ = Number(r2EffectParam6Text.value);
 					this.r2EffectParam7_ = Number(r2EffectParam7Text.value);
 
-							r2EffectModeText.innerText = "Effect mode";
-							r2EffectParam1Text.innerText = "param 1";
-							r2EffectParam3Text.innerText = "param 2";
-							r2EffectParam4Text.innerText = "param 3";
-							r2EffectParam5Text.innerText = "param 4";
-							r2EffectParam6Text.innerText = "param 5";
-							r2EffectParam7Text.innerText = "param 6";
+					let rtrigger0 = document.getElementById("rtrigger0");
+					let rtrigger1 = document.getElementById("rtrigger1");
+					let rtrigger2 = document.getElementById("rtrigger2");
+					let rtrigger3 = document.getElementById("rtrigger3");
+					let rtrigger4 = document.getElementById("rtrigger4");
+					let rtrigger5 = document.getElementById("rtrigger5");
+					let rtrigger6 = document.getElementById("rtrigger6");
+					let rtrigger7 = document.getElementById("rtrigger7");
+
+							rtrigger0.innerHTML = "Effect mode";
+							rtrigger1.innerHTML = "param 1";
+							rtrigger2.innerHTML = "param 2";
+							rtrigger3.innerHTML = "param 3";
+							rtrigger4.innerHTML = "param 4";
+							rtrigger5.innerHTML = "param 5";
+							rtrigger6.innerHTML = "param 6";
+							rtrigger7.innerHTML = "param 6";
+							//console.log("this has run");
 
 					switch (this.r2EffectMode_) {
 						case 0:
-							r2EffectModeText.innerHTML = "No Effect";
+							rtrigger0.innerHTML = "No Effect";
 						break;
 						case 1:
-							r2EffectModeText.innerHTML = "Constant Resistance";
-							r2EffectParam1Text.innerHTML = "Start Location";
-							r2EffectParam3Text.innerHTML = "Force";
+							rtrigger0.innerHTML = "Constant Resistance";
+							rtrigger1.innerHTML = "Start Location";
+							rtrigger2.innerHTML = "Force";
 						break;
 						case 2:
-							r2EffectModeText.innerHTML = "Snap Resistance";
-							r2EffectParam1Text.innerHTML = "Start Location";
-							r2EffectParam3Text.innerHTML = "End Location";
-							r2EffectParam4Text.innerHTML = "Force";
+							rtrigger0.innerHTML = "Snap Resistance";
+							rtrigger1.innerHTML = "Start Location";
+							rtrigger2.innerHTML = "End Location";
+							rtrigger3.innerHTML = "Force";
 						break;
 						case 6:
-							r2EffectModeText.innerHTML = "Kick/vibrate mode";
-							r2EffectParam1Text.innerHTML = "Kick Frequency";
-							r2EffectParam3Text.innerHTML = "Kick Magnitude";
-							r2EffectParam4Text.innerHTML = "Start Location";
+							rtrigger0.innerHTML = "Kick/vibrate mode";
+							rtrigger1.innerHTML = "Kick Frequency";
+							rtrigger2.innerHTML = "Kick Magnitude";
+							rtrigger3.innerHTML = "Start Location";
 						break;
 						case 33:
-							r2EffectModeText.innerHTML = "Complex effect 0x21";
+							rtrigger0.innerHTML = "Complex effect 0x21";
 						break;
 						case 34:
-							r2EffectModeText.innerHTML = "Complex effect 0x22";
+							rtrigger0.innerHTML = "Complex effect 0x22";
 						break;
 						case 35:
-							r2EffectModeText.innerHTML = "Complex effect 0x23";
+							rtrigger0.innerHTML = "Complex effect 0x23";
 						break;
 						case 37:
-							r2EffectModeText.innerHTML = "Complex effect 0x25";
+							rtrigger0.innerHTML = "Complex effect 0x25";
 						break;
 						case 38:
-							r2EffectModeText.innerHTML = "Complex effect 0x26";
+							rtrigger0.innerHTML = "Complex effect 0x26";
 						break;
 						case 39:
-							r2EffectModeText.innerHTML = "Complex effect 0x27";
+							rtrigger0.innerHTML = "Complex effect 0x27";
 						break;
 						default:
-						r2EffectModeText.innerHTML = "No currently known effect.";
+						rtrigger0.innerHTML = "No currently known effect.";
 						break;
 					}
 				};
@@ -431,6 +436,8 @@
 				r2EffectParam5Text.onchange = onTriggerEffectChanged;
 				r2EffectParam6Text.onchange = onTriggerEffectChanged;
 				r2EffectParam7Text.onchange = onTriggerEffectChanged;
+
+				onTriggerEffectChanged();
 			}
 
 			onConnectionError() {
