@@ -1,0 +1,88 @@
+data[00] always 0x31
+data[01] always 0x_1, with the upper byte being an incrementing counter from 0 to 0xf for each packet and wrapping around
+data[02] 0xff - L  / R  stick X-axis, 0 is left, 0xff is right  (analog) (same field for the respective stick in each controller) 
+data[03] 0xff - L  / R  stick Y-axis, 0 is   up, 0xff is  down  (analog) (same field for the respective stick in each controller) 
+data[04] 0xff - L2 / R2 trigger pull, from 0 to fully pulled at 0xff (analog)
+data[05] 0xff - L2 / R2 capacitative finger proximity from pre-touch to start pull         (analog) (same field for the respective stick in each controller) 
+data[06] 0xff - L1 / R1 capacitative finger proximity from pre-touch to completely clicked (analog) (same field for the respective stick in each controller) 
+data[07] zero (?)
+
+data[08] unknown; always 0x01 (?)
+data[09] 0x01 -   Square button click (only exists in  left controller)
+data[09] 0x02 -    Cross button click (only exists in right controller)
+data[09] 0x04 -   Circle button click (only exists in right controller)
+data[09] 0x08 - Triangle button click (only exists in  left controller)
+data[09] 0x10 -       L1 button click
+data[09] 0x20 -       R1 button click
+data[09] 0x40 -       L2 middle-pulled click
+data[09] 0x80 -       R2 middle-pulled click
+data[10] 0x01 -   Create button click (\|/) (only exists in  left controller)
+data[10] 0x02 -  Options button click       (only exists in right controller)
+data[10] 0x04 - L3 stick button click
+data[10] 0x08 - R3 stick button click
+data[10] 0x80 -       R2 capacitative finger resting on trigger  (on/off)
+data[10] 0x10 -       PS button click (same field for both controllers)
+data[11] 0x01 -  Upper action button (Triangle / Circle) capacitative finger proximity (on/off) (Triangle for left and Circle for right controller, detect accordingly)
+data[11] 0x02 -  Lower action button (Square   /  Cross) capacitative finger proximity (on/off)   (Square for left and  Cross for right controller, detect accordingly)
+data[11] 0x04 -  R stick capacitative finger resting on stick   (on/off)
+data[11] 0x08 -       R1 capacitative finger resting on button  (on/off)
+
+data[12] always 0x00 (?)
+
+data[13]  / 0xFF -              fast self-incrementing (adds one per packet)
+data[14] |  0xFF -      middle-speed self-incrementing 
+data[15] |  0xFF - 0x82 middle-speed self-incrementing packet-counter that survives reconnects (since power up?)
+data[16]  \ probably, this is the most-significant octet
+
+data[17]  / least significant
+data[18]  \ most significant accelerometer vertical, positive upwards, negative downwards, signed (int16 little-endian)
+         
+data[19]  / least significant
+data[20]  \ most significant accelerometer horizontal/yaw (?) signed, positive leftwards, negative rightwards (int16 little-endian)
+         
+data[21]  / least significant
+data[22]  \ most significant accelerometer roll (?) motion signed (int16 little-endian)
+         
+data[23]  / least significant
+data[24]  \ most significant gyroscope (?) motion signed (int16 little-endian)
+         
+data[25]  / least significant
+data[26]  \ most significant gyroscope (?) motion signed (int16 little-endian)
+         
+data[27]  / least significant
+data[28]  \ most significant gyroscope (?) motion signed (int16 little-endian)
+
+
+data[29]  / least significant
+data[30] |  
+data[31] | 
+data[32]  \ most significant, self-incrementing timestamp (¿?) independent of packet counter
+
+
+data[33] wanders aimlessly
+data[34-40] empty, zero
+
+data[41] Trigger feedback motor location (1-9)
+data[42] adaptive trigger feedback mode
+data[42] 0x00 - Simple feedback/No feedback
+data[42] 0x01 - Compound trigger feedback 0x21, 33
+data[42] 0x02 - Compound trigger feedback 0x25, 37
+data[42] 0x03 - Compound trigger feedback 0x26, 38
+data[42] 0x04 - Compound trigger feedback 0x22, 34
+data[42] 0x05 - Compound trigger feedback 0x23, 35
+data[42] 0x06 - Compound trigger feedback 0x27, 39
+data[43] 0x0F Battery percentage (0-A)
+data[43] 0xF0 charging data of some form?
+data[44] Charging data (power output of charger?)
+data[45-48] empty, zero
+
+data[49]  / least significant
+data[50] |  
+data[51] | 
+data[52]  \ most significant, another self-incrementing timestamp (¿?) independent of packet counter
+data[53-56] empty, zero
+
+data[57-64] random-looking data, plot and investigate
+data[65] always 0x0a  (?)
+data[66-73] empty, zero
+data[74-77] CRC32 checksum

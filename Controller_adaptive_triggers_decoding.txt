@@ -1,36 +1,30 @@
-0:
+0, 0x00:
 No effect
-1:
+1, 0x01:
 param 1: start location
 param 2: force
-2:
+2, 0x02:
 param 1: start location
 param 2: end location
 param 3: force (I think?)
-3:
-Unknown, probably/possibly unused.
-4:
-Unknown, probably/possibly unused.
-5:
-Unknown, probably/possibly unused.
-6:
+6, 0x06:
 param 1: Kick frequency
 param 2: Kick magnitude
 param 3: start location
 I feel like there should be a force setting, couldn't find it though.
-33:
+33, 0x21:
 param 1: simple resist start location
 param 2: 
 weird shit, cool though. Not sure how it works.
-34:
+34, 0x22:
 untested
-35:
+35, 0x23:
 untested
-37:
+//wtf happened to 0x24????
+37, 0x25:
 untested
-38:
+38, 0x26:
 untested
 3 stops?
-39:
-
-
+39, 0x27:
+param 4: Kick frequency
