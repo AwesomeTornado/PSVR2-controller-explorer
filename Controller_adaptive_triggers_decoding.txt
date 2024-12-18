@@ -6,7 +6,7 @@ param 2: force
 2, 0x02:
 param 1: start location
 param 2: end location
-param 3: force (I think?)
+param 3: force
 6, 0x06:
 param 1: Kick frequency
 param 2: Kick magnitude
