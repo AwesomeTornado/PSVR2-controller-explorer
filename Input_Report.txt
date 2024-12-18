@@ -5,9 +5,10 @@ data[03] 0xff - L  / R  stick Y-axis, 0 is   up, 0xff is  down  (analog) (same f
 data[04] 0xff - L2 / R2 trigger pull, from 0 to fully pulled at 0xff (analog)
 data[05] 0xff - L2 / R2 capacitative finger proximity from pre-touch to start pull         (analog) (same field for the respective stick in each controller) 
 data[06] 0xff - L1 / R1 capacitative finger proximity from pre-touch to completely clicked (analog) (same field for the respective stick in each controller) 
-data[07] zero (?)
 
+data[07] zero (?)
 data[08] unknown; always 0x01 (?)
+
 data[09] 0x01 -   Square button click (only exists in  left controller)
 data[09] 0x02 -    Cross button click (only exists in right controller)
 data[09] 0x04 -   Circle button click (only exists in right controller)
