@@ -16,7 +16,11 @@ Please feel free to add a pull request with a text file containing any of your o
 This project is built on top of https://github.com/nondebug/dualsense and is really more of an ugly patch-on than a full personal creation. Variable names may be mismatched, comments may be incorrect, stuff may be rudundant. If you find any of this, and are frustrated by it, I encourage you to make a Pull Request that fixes it. I would greatly appreciate it.
 
 Massive thanks to all the authors of the following repositories, these have helped massively so far. 
+
 https://github.com/LeGrandToto/PSVR2
+
 https://github.com/DMJC/PSVR2/
+
 https://gist.github.com/Swyter/4a4ea4c35dbedd144d22c10a7906facc
+
 https://github.com/nondebug/dualsense
