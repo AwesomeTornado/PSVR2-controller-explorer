@@ -1,4 +1,4 @@
-This is THE FIRST _FULLY_ open source project working on reverse engineering the PSVR2 Controllers.
+This is THE FIRST _FULLY_ open source project working on reverse engineering the PSVR2 Controllers with adaptive trigger support.
 
 If you are like me, and are frustrated by the abundance of closed source projects surrounding the PSVR2 and its incredible features, Welcome! This project is still in its infancy, and I don't have much time to work on it, but it already has support for the following:
 - Adaptive Triggers
