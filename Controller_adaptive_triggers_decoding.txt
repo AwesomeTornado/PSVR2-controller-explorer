@@ -1,29 +1,47 @@
 0, 0x00:
 No effect
+
 1, 0x01:
 param 1: start location
 param 2: force
+
 2, 0x02:
 param 1: start location
 param 2: end location
 param 3: force
+
+5, 0x05:
+No settings, simply resets the feedback motor. (No haptics)
+
 6, 0x06:
 param 1: Kick frequency
 param 2: Kick magnitude
 param 3: start location
-I feel like there should be a force setting, couldn't find it though.
+
+
 33, 0x21:
-param 1: simple resist start location (NOPE)
-param 2: 
-weird shit, cool though. Not sure how it works.
-
-param 1: Binary location for first stop. Larger numbers lead to later stops. Only MSB matters
-Note, the above description does not work fully. I have something wrong.
-
-
+ first byte - first effect
+    Region before the second effect is split into 8'ths. Each bit corrosponds to a snap effect at each region.
+    Regions that are near each other may overlap slightly, meaning large regions of force may be defined.
+ second byte - End of travel effect
+    second mode, MOD 4
+        0x00 = none 
+        0x01 = end Snap
+        0x02 = small end force
+        0x03 = large end force
+ third byte (0x0F)
+    Return speed
 
 34, 0x22:
-untested
+ first byte - first effect
+    Region before the second effect is split into 8'ths. Each bit corrosponds to a region.
+    A constant force is placed between the first and last 1's in the input. Intermediate bits have no effect.
+ second byte - End of travel effect
+ 
+ third byte (0x0F)
+    Return speed
+
+
 35, 0x23:
 untested
 //wtf happened to 0x24????
