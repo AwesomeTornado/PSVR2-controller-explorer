@@ -1,0 +1,555 @@
+<!doctype html>
+<html><head><title>PlayStation VR2 Dual Sense Controller Visualizer</title><style>
+svg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	max-width: 100vw;
+	max-height: 100vh;
+}
+
+svg text {
+	text-anchor: middle;
+	white-space: pre;
+}
+
+svg text tspan {
+	fill: #aaa;
+}
+</style><script>
+/*
+ * controller_ is the raw HIDDevice entries
+ * report_ is the most recent processed report structure
+ */
+
+let controller_L;
+let controller_R;
+let report_L;
+let report_R;
+
+async function verify_bluetooth( d ) {
+	// Search for a GAME_PAD usage on a GENERIC_DESKTOP usage page
+	// w/ an InputReport of type 0x31 that has a total size of 616
+	// bits, which is 77 bytes, the bluetooth report size used.
+	return d.collections
+		.filter( i => i.usage === 5 && i.usagePage === 1 )
+		.map( i =>
+			i.inputReports
+			.filter( j => j.reportId === 0x31 )
+			.map( j => j.items.reduce( ( a, c ) => a + c.reportSize * c.reportCount, 0 ) === 616 )
+		)
+		.reduce( ( a, c ) => a || c )
+		.reduce( ( a, c ) => a || c );
+}
+
+function generate_dash_array( int16 ) {
+	let off;
+	let len;
+	const ratio = int16 / 250.0;
+	off = Math.max( 0, Math.min( 100, ( 100 + ratio ) ) - 1 )
+	len = Math.min( 102, Math.abs( ratio ) + 2 );
+	return [0,off,len,1000].join( ' ' );
+}
+
+async function update_display( report, side ) {
+	const raw = report.raw.split( ' ' );
+	let elem;
+
+	elem = document.getElementById( `stick_${ side }` );
+	elem.cx.baseVal.value = report.stick.x * 100.0;
+	elem.cy.baseVal.value = report.stick.y * 100.0;
+	elem.style.fill = report.stick.touch ? '#000' : '#aaa';
+	elem.style.stroke = report.stick.click ? '#f00' : '#000';
+	elem.style.strokeWidth = report.stick.click ? 10 : 2;
+
+	elem = document.getElementById( `option_${ side }` );
+	elem.style.stroke = report.option.click ? '#f00' : '#000';
+	elem.style.strokeWidth = report.option.click ? 10 : 2;
+
+	elem = document.getElementById( `menu_${ side }` );
+	elem.style.stroke = report.menu.click ? '#f00' : '#000';
+	elem.style.strokeWidth = report.menu.click ? 10 : 2;
+
+	elem = document.getElementById( `upper_${ side }` );
+	elem.style.fill = report.upper.touch ? '#000' : '#aaa';
+	elem.style.stroke = report.upper.click ? '#f00' : '#000';
+	elem.style.strokeWidth = report.upper.click ? 10 : 2;
+
+	elem = document.getElementById( `lower_${ side }` );
+	elem.style.fill = report.lower.touch ? '#000' : '#aaa';
+	elem.style.stroke = report.lower.click ? '#f00' : '#000';
+	elem.style.strokeWidth = report.lower.click ? 10 : 2;
+
+	elem = document.getElementById( `trigger_touch_${ side }` );
+	elem.style.stroke = report.trigger.touch ? '#000' : '#aaa';
+
+	elem = document.getElementById( `trigger_cap_${ side }` );
+	elem.style.strokeDasharray = [ report.trigger.cap * 3.6, 1000 ].join( ' ' );
+
+	elem = document.getElementById( `trigger_pull_${ side }` );
+	elem.style.strokeDasharray = [ report.trigger.pull * 3.6, 1000 ].join( ' ' );
+
+	elem = document.getElementById( `trigger_click_${ side }` );
+	elem.style.strokeWidth = report.trigger.click ? 10 : 2;
+	elem.style.stroke = report.trigger.click ? '#f00' : '#000';
+
+	elem = document.getElementById( `grip_touch_${ side }` );
+	elem.style.stroke = report.grip.touch ? '#000' : '#aaa';
+
+	elem = document.getElementById( `grip_cap_${ side }` );
+	elem.style.strokeDasharray = [ report.grip.cap * 3.6, 1000 ].join( ' ' );
+
+	elem = document.getElementById( `grip_click_${ side }` );
+	elem.style.strokeWidth = report.grip.click ? 10 : 2;
+	elem.style.stroke = report.grip.click ? '#f00' : '#000';
+
+	elem = document.getElementById( `battery_${ side }` );
+	elem.style.strokeDasharray = [ report.power.battery * 3.6, 1000 ].join( ' ' );
+
+	elem = document.getElementById( `battery_plug_${ side }` );
+	elem.style.fill = report.power.plugged_in ? '#fff' : 'none';
+
+	elem = document.getElementById( `battery_full_${ side }` );
+	elem.style.fill = report.power.charged ? '#fff' : 'none';
+
+	elem = document.getElementById( `battery_charging_${ side }` );
+	elem.style.fill = report.power.charging ? '#fff' : 'none';
+
+	elem = document.getElementById( `accel_x_${ side }` );
+	elem.style.strokeDasharray = generate_dash_array( report.accel.x );
+
+	elem = document.getElementById( `accel_y_${ side }` );
+	elem.style.strokeDasharray = generate_dash_array( report.accel.y );
+
+	elem = document.getElementById( `accel_z_${ side }` );
+	elem.style.strokeDasharray = generate_dash_array( report.accel.z );
+
+	elem = document.getElementById( `gyro_x_${ side }` );
+	elem.style.strokeDasharray = generate_dash_array( report.gyro.x );
+
+	elem = document.getElementById( `gyro_y_${ side }` );
+	elem.style.strokeDasharray = generate_dash_array( report.gyro.y );
+
+	elem = document.getElementById( `gyro_z_${ side }` );
+	elem.style.strokeDasharray = generate_dash_array( report.gyro.z );
+
+	elem = document.getElementById( `raw_0_${ side }` );
+	elem.innerHTML = `00: ${
+		raw[ 0 ]
+	} <tspan>${
+		raw.slice( 1, 6 ).join( ' ' )
+	}</tspan> ${
+		raw.slice( 6, 8 ).join( ' ' )
+	} <tspan>${
+		raw.slice( 8, 11 ).join( ' ' )
+	}</tspan> ${
+		raw[ 11 ]
+	} <tspan>${
+		( '           #' + report.counters.poweron.toString( 10 ) ).slice( -11 )
+	}</tspan>`;
+	elem = document.getElementById( `raw_1_${ side }` );
+	elem.innerHTML = `16: <tspan>${
+		raw.slice( 16, 28 ).join( ' ' )
+	} ${
+		( "          #" + report.counters.timestamp1.toString( 10 ) ).slice( -11 )
+	}</tspan>`;
+	elem = document.getElementById( `raw_2_${ side }` );
+	elem.innerHTML = `32: ${
+		raw.slice( 32, 42 ).join( ' ' )
+	} <tspan>${
+		raw.slice( 42, 44 ).join( ' ' )
+	}</tspan> ${
+		raw.slice( 44, 48 ).join( ' ' )
+	}`;
+	elem = document.getElementById( `raw_3_${ side }` );
+	elem.innerHTML = `48: <tspan>${
+		( "          #" + report.counters.timestamp2.toString( 10 ) ).slice( -11 )
+	}</tspan> ${
+		raw.slice( 52, 64 ).join( ' ' )
+	}`;
+	elem = document.getElementById( `raw_4_${ side }` );
+	elem.innerHTML = "64: " + raw.slice( 64 ).join( ' ' ) + "         ";
+}
+
+async function input_report_L( event ) {
+	/* Only process the 'full' reports with all IMU data */
+	if ( event.reportId != 0x31 ) {
+		return;
+	}
+
+	const buttons = event.data.getUint32( 8, true );
+
+	const raw = [ ...new Uint8Array( event.data.buffer ) ].map( i => ( "00" + i.toString( 16 ) ).slice( -2 ) );
+
+	const report = {
+		raw:     raw.join( ' ' )
+	,	stick: {
+			click: ( buttons & 0x000400 ) ? true : false
+		,	touch: ( buttons & 0x040000 ) ? true : false
+		,	x: ( ( event.data.getUint8(  1       ) *  10 ) - 1275 ) / 1275.0
+		,	y: ( ( event.data.getUint8(  2       ) *  10 ) - 1275 ) / 1275.0
+		}
+	,	trigger: {
+			click: ( buttons & 0x000040 ) ? true : false
+		,	touch: ( buttons & 0x008000 ) ? true : false
+		,	cap:   ( event.data.getUint8(  4       ) * 100 ) / 255.0
+		,	pull:  ( event.data.getUint8(  3       ) * 100 ) / 255.0
+		}
+	,	grip: {
+			click: ( buttons & 0x000010 ) ? true : false
+		,	touch: ( buttons & 0x080000 ) ? true : false
+		,	cap:   ( event.data.getUint8(  5       ) * 100 ) / 255.0
+		}
+	,	upper: {
+			click: ( buttons & 0x000008 ) ? true : false
+		,	touch: ( buttons & 0x010000 ) ? true : false
+		}
+	,	lower: {
+			click: ( buttons & 0x000001 ) ? true : false
+		,	touch: ( buttons & 0x020000 ) ? true : false
+		}
+	,	menu: {
+			click: ( buttons & 0x001000 ) ? true : false
+		}
+	,	option: {
+			click: ( buttons & 0x000100 ) ? true : false
+		}
+	,	gyro: {
+			x:   event.data.getInt16( 16, true )
+		,	y:   event.data.getInt16( 18, true )
+		,	z:   event.data.getInt16( 20, true )
+		}
+	,	accel: {
+			x:  event.data.getInt16( 22, true )
+		,	y:  event.data.getInt16( 24, true )
+		,	z:  event.data.getInt16( 26, true )
+		}
+	,	power: {
+			plugged_in: ( event.data.getUint8( 43 ) & 0x10 ) ? true : false
+		,	charging:   ( event.data.getUint8( 42 ) & 0x10 ) ? true : false
+		,	charged:    ( event.data.getUint8( 42 ) & 0x20 ) ? true : false
+		,	battery:    ( ( event.data.getUint8( 42 ) & 0x0f ) * 11 + 1 )
+		}
+	,	counters: {
+			poweron: event.data.getUint32( 12, true )
+		,	timestamp1: event.data.getUint32( 28, true )
+		,	timestamp2: event.data.getUint32( 48, true )
+		}
+	};
+
+	report_L = report;
+
+	update_display( report, 'L' );
+}
+
+async function input_report_R( event ) {
+	/* Only process reports with full IMU data */
+	if ( event.reportId != 0x31 ) {
+		return;
+	}
+
+	const buttons = event.data.getUint32( 8, true );
+
+	const report = {
+		raw:     [ ...new Uint8Array( event.data.buffer ) ].map( i => ( "00" + i.toString( 16 ) ).slice( -2 ) ).join( ' ' )
+	,	stick: {
+			click: ( buttons & 0x000800 ) ? true : false
+		,	touch: ( buttons & 0x040000 ) ? true : false
+		,	x: ( ( event.data.getUint8(  1       ) *  10 ) - 1275 ) / 1275.0
+		,	y: ( ( event.data.getUint8(  2       ) *  10 ) - 1275 ) / 1275.0
+		}
+	,	trigger: {
+			click: ( buttons & 0x000080 ) ? true : false
+		,	touch: ( buttons & 0x008000 ) ? true : false
+		,	cap:   ( event.data.getUint8(  4       ) * 100 ) / 255.0
+		,	pull:  ( event.data.getUint8(  3       ) * 100 ) / 255.0
+		}
+	,	grip: {
+			click: ( buttons & 0x000020 ) ? true : false
+		,	touch: ( buttons & 0x080000 ) ? true : false
+		,	cap:   ( event.data.getUint8(  5       ) * 100 ) / 255.0
+		}
+	,	upper: {
+			click: ( buttons & 0x000004 ) ? true : false
+		,	touch: ( buttons & 0x010000 ) ? true : false
+		}
+	,	lower: {
+			click: ( buttons & 0x000002 ) ? true : false
+		,	touch: ( buttons & 0x020000 ) ? true : false
+		}
+	,	menu: {
+			click: ( buttons & 0x001000 ) ? true : false
+		}
+	,	option: {
+			click: ( buttons & 0x000200 ) ? true : false
+		}
+	,	gyro: {
+			x:   event.data.getInt16( 16, true )
+		,	y:   event.data.getInt16( 18, true )
+		,	z:   event.data.getInt16( 20, true )
+		}
+	,	accel: {
+			x:  event.data.getInt16( 22, true )
+		,	y:  event.data.getInt16( 24, true )
+		,	z:  event.data.getInt16( 26, true )
+		}
+	,	power: {
+			plugged_in: ( event.data.getUint8( 43 ) & 0x10 ) ? true : false
+		,	charging:   ( event.data.getUint8( 42 ) & 0x10 ) ? true : false
+		,	charged:    ( event.data.getUint8( 42 ) & 0x20 ) ? true : false
+		,	battery:    ( ( event.data.getUint8( 42 ) & 0x0f ) * 11 + 1 )
+		}
+	,	counters: {
+			poweron: event.data.getUint32( 12, true )
+		,	timestamp1: event.data.getUint32( 28, true )
+		,	timestamp2: event.data.getUint32( 48, true )
+		}
+	};
+
+	report_R = report;
+
+	update_display( report, 'R' );
+}
+
+async function device_connected( device ) {
+	if ( device.opened === false ) {
+		await device.open();
+		if ( device.opened === false ) {
+			console.log( 'Failed to open controller.' );
+			return;
+		}
+	}
+
+	/* Activate report 0x31 being sent. */
+	try {
+		await device.receiveFeatureReport( 5 );
+	} catch( e ) { }
+
+	/* Remove the old event listener in case we're switching controllers. */
+	if ( device.productId === 3653 ) {
+		try {
+			controller_L.removeEventListener( 'inputreport', input_report_L );
+		} catch ( e ) { }
+		controller_L = device;
+		controller_L.addEventListener( 'inputreport', input_report_L );
+		document.querySelector( '#add_left' ).style.display = 'none';
+	} else {
+		try {
+			controller_R.removeEventListener( 'inputreport', input_report_R );
+		} catch ( e ) { }
+		controller_R = device;
+		controller_R.addEventListener( 'inputreport', input_report_R );
+		document.querySelector( '#add_right' ).style.display = 'none';
+	}
+}
+
+async function device_connected_handler( event ) {
+	device_connected( event.device );
+}
+
+async function device_disconnected_handler( event ) {
+	if ( event.device.vendorId !== 1365 ) {
+		return;
+	}
+
+	if ( event.device.productId === 3653 ) {
+		try {
+			controller_L.removeEventListener( 'inputreport', input_report_L );
+		} catch ( e ) { }
+
+		controller_L = undefined;
+
+		return;
+	}
+
+	if ( event.device.productId === 3654 ) {
+		try {
+			controller_R.removeEventListener( 'inputreport', input_report_R );
+		} catch ( e ) { }
+
+		controller_R = undefined;
+
+		return;
+	}
+}
+
+async function request_controller( product_id ) {
+	try {
+		for ( const device of await navigator.hid.requestDevice( { filters: [ {
+			vendorId: 1356 // Sony
+		,	productId: product_id
+		,	usagePage: 1 // GENERIC_DESKTOP
+		,	usage: 5 // GAME_PAD
+		} ] } ) ) {
+			device_connected( device );
+		};
+	} catch( e ) {
+		return;
+	}
+}
+
+addEventListener( 'DOMContentLoaded', async () => {
+	navigator.hid.onconnect = device_connected_handler;
+	navigator.hid.ondisconnect = device_disconnected_handler;
+	for ( const device of await navigator.hid.getDevices() ) {
+		if ( device.vendorId !== 1356 ) { /* Sony */
+			continue;
+		}
+
+		if ( ( device.productId !== 3653 ) /* Left */
+		  && ( device.productId !== 3654 ) /* Right */
+		) {
+			continue;
+		}
+
+		if ( await verify_bluetooth( device ) === false ) {
+			console.log( 'Only BlueTooth connectivity is supported.' );
+			continue;
+		};
+		
+		device_connected( device );
+	}
+	document.querySelector( '#add_left' ).style.opacity = 0.9;
+	document.querySelector( '#add_right' ).style.opacity = 0.9;
+} );
+</script></head><body><svg width="100%" height="100%" viewbox="-450 -450 900 900" preserveAspectRatio="xMidYMid meet" stroke="none" stroke-width="2" fill="none" stroke-linecap="butt" font-size="25px">
+<g transform="translate( -225 0 )">
+	<rect x="-105" y="-105" width="210" height="210" rx="35" stroke-width="10" stroke="#000" />
+	<circle id="stick_L" r="10" stroke="#000" fill="#aaa" />
+
+	<g transform="translate( 155 -30 )">
+		<circle id="upper_L" r="20" stroke="#000" fill="#aaa" />
+		<path d="M0,-12l10,20h-20z" stroke="#fff" />
+	</g>
+
+	<g transform="translate( 155, 30 )">
+		<circle id="lower_L" r="20" stroke="#000" fill="#aaa" />
+		<rect x="-10" y="-10" width="20" height="20" stroke="#fff" />
+	</g>
+
+	<circle id="menu_L" cx="0" cy="155" r="20" stroke="#000" fill="#aaa" />
+
+	<rect id="option_L" x="-175" y="-50" width="40" height="100" rx="20" fill="#aaa" stroke="#000" />
+
+	<g transform="translate( -180 220 )">
+		<path id="trigger_touch_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
+		<path id="trigger_cap_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
+		<path id="trigger_pull_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0f0" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
+		<rect id="trigger_click_L" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<text x="180" y="7.5" fill="#000">Trigger</text>
+	</g>
+
+	<g transform="translate( -180 280 )">
+		<path id="grip_touch_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
+		<path id="grip_cap_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
+		<rect id="grip_click_L" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<text x="180" y="7.5" fill="#000">Grip</text>
+	</g>
+
+	<g transform="translate( -180 340 )">
+		<path d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
+		<path id="battery_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0ff" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
+		<rect x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<g transform="translate( 0 10 )">
+			<text id="battery_plug_L" x="5">&#128268;</text>
+			<text id="battery_charging_L" x="30">&#9889;</text>
+			<text id="battery_full_L" x="355">&#128267;</text>
+			<text fill="#000" x="180" y="-2.5">Battery</text>
+		</g>
+	</g>
+
+	<g transform="translate( -105 -325 )">
+		<path id="accel_x_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" />
+		<path id="accel_y_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(90)" />
+		<path id="accel_z_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(-45)" />
+		<text y="125" fill="#000">Movement</text>
+	</g>
+
+	<g transform="translate( 105 -325 )">
+		<path id="gyro_x_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" />
+		<path id="gyro_y_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(90)" />
+		<path id="gyro_z_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(-45)" />
+		<text y="125" fill="#000">Spinning</text>
+	</g>
+
+	<text id="raw_0_L" y="-180" style="font: 15px monospace" fill="#000">00: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
+	<text id="raw_1_L" y="-165" style="font: 15px monospace" fill="#000">16: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
+	<text id="raw_2_L" y="-150" style="font: 15px monospace" fill="#000">32: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
+	<text id="raw_3_L" y="-135" style="font: 15px monospace" fill="#000">48: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
+	<text id="raw_4_L" y="-120" style="font: 15px monospace" fill="#000">64: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00         </tspan></text>
+
+	<a href="#" onclick="request_controller( 3653 )" id="add_left" style="opacity: 0; transition: opacity 1s">
+		<rect x="-200" y="-425" width="400" height="850" rx="50" stroke-width="25px" stroke="#000" fill="#fff" />
+		<text transform="rotate(-90)" fill="#000" style="font-size: 50" dominant-baseline="middle" text-anchor="middle">Add LEFT Controller</text>
+	</a>
+</g>
+
+<g transform="translate( 225 0 )">
+	<rect x="-105" y="-105" width="210" height="210" rx="35" stroke-width="10" stroke="#000" />
+	<circle id="stick_R" r="10" stroke="#000" fill="#aaa" />
+
+	<g transform="translate( -155 -30 )">
+		<circle id="upper_R" r="20" stroke="#000" fill="#aaa" />
+		<circle r="10" stroke="#fff" />
+	</g>
+
+	<g transform="translate( -155 30 )">
+		<circle id="lower_R" r="20" stroke="#000" fill="#aaa" />
+		<path d="M-10,-10l20,20m0,-20l-20,20" stroke="#fff" />
+	</g>
+
+	<circle id="menu_R" cx="0" cy="155" r="20" stroke="#000" fill="#aaa" />
+
+	<rect id="option_R" x="135" y="-50" width="40" height="100" rx="20" fill="#aaa" stroke="#000" />
+
+	<g transform="translate( -180 220 )">
+		<path id="trigger_touch_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
+		<path id="trigger_cap_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
+		<path id="trigger_pull_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0f0" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
+		<rect id="trigger_click_R" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<text x="180" y="7.5" fill="#000">Trigger</text>
+	</g>
+
+	<g transform="translate( -180 280 )">
+		<path id="grip_touch_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
+		<path id="grip_cap_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
+		<rect id="grip_click_R" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<text x="180" y="7.5" fill="#000">Grip</text>
+	</g>
+
+	<g transform="translate( -180 340 )">
+		<path d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
+		<path id="battery_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0ff" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
+		<rect x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<text id="battery_plug_R" x="5" y="10">&#128268;</text>
+		<text id="battery_charging_R" x="30" y="10">&#9889;</text>
+		<text id="battery_full_R" x="355" y="10">&#128267;</text>
+		<text fill="#000" x="180" y="7.5">Battery</text>
+	</g>
+
+	<g transform="translate( 105 -325 )">
+		<path id="accel_x_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" />
+		<path id="accel_y_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(90)" />
+		<path id="accel_z_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(-45)" />
+		<text y="125" fill="#000">Movement</text>
+	</g>
+
+	<g transform="translate( -105 -325 )">
+		<path id="gyro_x_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" />
+		<path id="gyro_y_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(90)" />
+		<path id="gyro_z_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(-45)" />
+		<text y="125" fill="#000">Spinning</text>
+	</g>
+
+	<text id="raw_0_R" y="-180" style="font: 15px monospace" fill="#000">00: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
+	<text id="raw_1_R" y="-165" style="font: 15px monospace" fill="#000">16: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
+	<text id="raw_2_R" y="-150" style="font: 15px monospace" fill="#000">32: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
+	<text id="raw_3_R" y="-135" style="font: 15px monospace" fill="#000">48: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
+	<text id="raw_4_R" y="-120" style="font: 15px monospace" fill="#000">64: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00         </tspan></text>
+
+	<a href="#" onclick="request_controller( 3654 )" id="add_right" style="opacity: 0; transition: opacity 1s">
+		<rect x="-200" y="-425" width="400" height="850" rx="50" stroke-width="25px" stroke="#000" fill="#fff" />
+		<text transform="rotate(90)" fill="#000" style="font-size: 50" dominant-baseline="middle" text-anchor="middle">Add RIGHT Controller</text>
+	</a>
+</g>
+</svg></body></html>
