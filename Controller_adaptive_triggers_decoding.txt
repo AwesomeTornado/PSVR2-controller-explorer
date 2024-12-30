@@ -27,8 +27,8 @@ second byte - End of travel effect
     second mode, MOD 4
         0x00 = none 
         0x01 = end Snap
-        0x02 = small end force
-        0x03 = large end force
+        0x02 = end force (with tiny dead zone at start)
+        0x03 = end force (continous from previous force)
 third byte:
     First defined region force
 fourth byte:
@@ -40,22 +40,35 @@ sixth byte:
     End of travel effect force
 
 34, 0x22:
- first byte - first effect
+first byte - first effect
     Region before the second effect is split into 8'ths. Each bit corrosponds to a region.
-    A constant force is placed between the first and last 1's in the input. Intermediate bits have no effect.
-    At least two 1's are required if second effect is undefined. Otherwise:
- second byte - End of travel effect
-        0x00 = No changes. 
-        0x01 = Continous force, end snap. Starting point is changed by first byte. No end.
-        0x02 = Continous force. Starting point is changed by first byte. No end.
-        0x03 = large end force
- third byte (0xFF)
-    Force
+second byte - End of travel effect
+        0x00:
+            A constant force is placed between the first and last 1's in the input. Intermediate bits have no effect.
+            At least two bits are required to be set to 1. No end resistance.
+        0x01:
+            Continous force, light end snap. Starting point is changed by first set bit in the first byte. No end setting.
+        0x02:
+            Continous force. Starting point is changed by first set bit in the first byte. No end setting.
+        0x03:
+            Continous force. Starting point is changed by the first set bit in the first byte.
+            Will still activate at end of travel even if first byte == 0x00.
+third byte (0xFF)
+    Force (But this is no ordinary force, powers of two are unusually weak. why???)
 
 
 35, 0x23:
-untested
-//wtf happened to 0x24????
+
+second byte:
+    0x00:
+    0x01:
+    0x02:
+
+    0x03:
+        Galloping mode
+            third byte: Gait (0x0F)
+            fourth byte: frequency
+
 37, 0x25:
 untested
 38, 0x26:
