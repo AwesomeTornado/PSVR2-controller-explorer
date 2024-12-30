@@ -97,7 +97,6 @@
 			<input type="checkbox" id="playerLed3" />Player LED 3<br />
 			<input type="checkbox" id="playerLed4" />Player LED 4<br />
 			<input type="checkbox" id="playerLed5" />Player LED 5<br />
-			<input type="checkbox" id="muteLed" />Microphone Mute LED<br />
 
 			<div>
 				<div style="float: left"><input type="number" id="r2effectmode" style="text-align: right; width: 50"
@@ -209,7 +208,6 @@
 		const playerLed3Checkbox = document.getElementById("playerLed3");
 		const playerLed4Checkbox = document.getElementById("playerLed4");
 		const playerLed5Checkbox = document.getElementById("playerLed5");
-		const muteLedCheckbox = document.getElementById("muteLed");
 
 		const r2EffectModeText = document.getElementById("r2effectmode");
 		const r2EffectParam1Text = document.getElementById("r2effectparam1");
@@ -296,7 +294,6 @@
 				// Output report state.
 				this.outputSeq_ = 1;
 				this.playerLeds_ = 0x00;
-				this.muteLed_ = 0x00;
 				this.motorLeft_ = 0x00;
 				this.motorRight_ = 0x00;
 				this.r2EffectMode_ = 0x26;
@@ -364,11 +361,6 @@
 				playerLed3Checkbox.onchange = onPlayerLedsChanged;
 				playerLed4Checkbox.onchange = onPlayerLedsChanged;
 				playerLed5Checkbox.onchange = onPlayerLedsChanged;
-
-				const onMuteLedChanged = (e) => {
-					this.muteLed_ = muteLedCheckbox.checked ? 0x01 : 0x00;
-				};
-				muteLedCheckbox.onchange = onMuteLedChanged;
 
 				const onLightbarColorChanged = (e) => {
 					this.sliderLightbarRed_ = lightbarRedSlider.value;
@@ -564,7 +556,6 @@
 				let r3 = normalizeButton(buttons1 & 0x80);
 				let ps = normalizeButton(buttons2 & 0x01);
 				let touchpad = normalizeButton(buttons2 & 0x02);
-				let mute = normalizeButton(buttons2 & 0x04);
 				let grip = normalizeButton(buttons2 & 0x08);
 				this.enablehaptics = grip;
 				let trigger = normalizeButton(buttons1 & 0x80);
@@ -598,7 +589,7 @@
 
 				upper_touch_checkbox.checked = ps;
 				lower_touch_checkbox.checked = touchpad;
-				joystick_touch_checkbox.checked = mute;
+				joystick_touch_checkbox.checked = joystick_touched;
 				grip_touch_checkbox.checked = grip;
 				triggerTouchCheckbox.checked = trigger;
 
@@ -661,7 +652,7 @@
 				let r3 = normalizeButton(buttons1 & 0x80);
 				let ps = normalizeButton(buttons2 & 0x01);
 				let touchpad = normalizeButton(buttons2 & 0x02);
-				let mute = normalizeButton(buttons2 & 0x04);
+				let joystick_touched = normalizeButton(buttons2 & 0x04);
 				let grip = normalizeButton(buttons2 & 0x08);
 				this.enablehaptics = grip;
 				let trigger = normalizeButton(buttons1 & 0x80);
@@ -678,7 +669,7 @@
 
 				upper_touch_checkbox.checked = ps;
 				lower_touch_checkbox.checked = touchpad;
-				joystick_touch_checkbox.checked = mute;
+				joystick_touch_checkbox.checked = joystick_touched;
 				grip_touch_checkbox.checked = grip;
 				triggerTouchCheckbox.checked = trigger;
 
@@ -764,7 +755,7 @@
 				let r3 = normalizeButton(buttons1 & 0x80);
 				let ps = normalizeButton(buttons2 & 0x01);
 				let touchpad = normalizeButton(buttons2 & 0x02);
-				let mute = normalizeButton(buttons2 & 0x04);
+				let joystick_touched = normalizeButton(buttons2 & 0x04);
 				let grip = normalizeButton(buttons2 & 0x08);
 				this.enablehaptics = grip;
 				let trigger = normalizeButton(buttons1 & 0x80);
@@ -798,7 +789,7 @@
 
 				upper_touch_checkbox.checked = ps;
 				lower_touch_checkbox.checked = touchpad;
-				joystick_touch_checkbox.checked = mute;
+				joystick_touch_checkbox.checked = joystick_touched;
 				grip_touch_checkbox.checked = grip;
 				triggerTouchCheckbox.checked = trigger;
 
@@ -926,7 +917,6 @@
 				common.setUint8(0, hapticsel0);
 
 				// valid_flag1
-				// bit 0: MIC_MUTE_LED_CONTROL_ENABLE
 				// bit 1: POWER_SAVE_CONTROL_ENABLE
 				// bit 2: LIGHTBAR_CONTROL_ENABLE
 				// bit 3: RELEASE_LEDS
@@ -941,15 +931,6 @@
 				common.setUint8(5, hapticsel0);
 				common.setUint8(6, hapticsel0);
 				common.setUint8(7, hapticsel0);
-
-				// mute_button_led
-				// 0: mute LED off
-				// 1: mute LED on
-				common.setUint8(8, hapticsel2);
-
-				// power_save_control
-				// bit 4: POWER_SAVE_CONTROL_MIC_MUTE
-				common.setUint8(9, this.muteLed_ ? 0x00 : 0x10);
 
 				// Right trigger effect
 				// Mode
