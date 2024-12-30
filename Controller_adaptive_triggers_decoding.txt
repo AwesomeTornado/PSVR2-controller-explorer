@@ -20,26 +20,37 @@ param 3: start location
 
 
 33, 0x21:
- first byte - first effect
+first byte - first effect
     Region before the second effect is split into 8'ths. Each bit corrosponds to a snap effect at each region.
     Regions that are near each other may overlap slightly, meaning large regions of force may be defined.
- second byte - End of travel effect
+second byte - End of travel effect
     second mode, MOD 4
         0x00 = none 
         0x01 = end Snap
         0x02 = small end force
         0x03 = large end force
- third byte (0x0F)
-    Return speed
+third byte:
+    First defined region force
+fourth byte:
+    Second defined region force
+fifth byte:
+    Third defined region force
+(No setting for fourth defined region exists)
+sixth byte:
+    End of travel effect force
 
 34, 0x22:
  first byte - first effect
     Region before the second effect is split into 8'ths. Each bit corrosponds to a region.
     A constant force is placed between the first and last 1's in the input. Intermediate bits have no effect.
+    At least two 1's are required if second effect is undefined. Otherwise:
  second byte - End of travel effect
- 
- third byte (0x0F)
-    Return speed
+        0x00 = No changes. 
+        0x01 = Continous force, end snap. Starting point is changed by first byte. No end.
+        0x02 = Continous force. Starting point is changed by first byte. No end.
+        0x03 = large end force
+ third byte (0xFF)
+    Force
 
 
 35, 0x23:

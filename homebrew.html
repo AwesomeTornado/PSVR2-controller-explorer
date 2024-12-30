@@ -434,24 +434,13 @@
 							break;
 						case 33:
 							rtrigger0.innerHTML = "Regional resistance + end of travel effect";
-							rtrigger1.innerHTML = "Regional resistance (See source for details) [binary]";
+							rtrigger1.innerHTML = "Regional resistance (See documentation on github for details) [binary]";
 							r2effecttextbox.setAttribute("type", "text");
-							rtrigger2.innerHTML = "End of travel effect (See source for details)";
-							rtrigger3.innerHTML = "force";
-							/*
-							33, 0x21:
- 							first byte - first effect
-								Region before the second effect is split into 8'ths. Each bit corrosponds to a snap effect at each region.
-								Regions that are near each other may overlap slightly, meaning large regions of force may be defined.
- 							second byte - End of travel effect
-								second mode, MOD 4
-									0x00 = none 
-									0x01 = end Snap
-									0x02 = small end force
-									0x03 = large end force
- 							third byte (0x0F)
-								Return speed
-							*/
+							rtrigger2.innerHTML = "End of travel effect (See documentation on github for details)";
+							rtrigger3.innerHTML = "region A force";
+							rtrigger4.innerHTML = "region B force";
+							rtrigger5.innerHTML = "region C force";
+							rtrigger6.innerHTML = "End of travel effect force";
 							break;
 						case 34:
 							rtrigger0.innerHTML = "Regional resistance + end of travel effect";
