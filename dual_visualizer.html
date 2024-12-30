@@ -42,133 +42,122 @@ async function verify_bluetooth( d ) {
 		.reduce( ( a, c ) => a || c );
 }
 
-function generate_dash_array( int16 ) {
-	let off;
-	let len;
-	const ratio = int16 / 250.0;
-	off = Math.max( 0, Math.min( 100, ( 100 + ratio ) ) - 1 )
-	len = Math.min( 102, Math.abs( ratio ) + 2 );
-	return [0,off,len,1000].join( ' ' );
-}
-
 async function update_display( report, side ) {
-	const raw = report.raw.split( ' ' );
+	const raw = report.raw;
 	let elem;
 
 	elem = document.getElementById( `stick_${ side }` );
 	elem.cx.baseVal.value = report.stick.x * 100.0;
 	elem.cy.baseVal.value = report.stick.y * 100.0;
-	elem.style.fill = report.stick.touch ? '#000' : '#aaa';
-	elem.style.stroke = report.stick.click ? '#f00' : '#000';
-	elem.style.strokeWidth = report.stick.click ? 10 : 2;
 
-	elem = document.getElementById( `option_${ side }` );
-	elem.style.stroke = report.option.click ? '#f00' : '#000';
-	elem.style.strokeWidth = report.option.click ? 10 : 2;
+	for ( button of [ 'stick', 'upper', 'lower', 'trigger', 'grip', 'option', 'menu' ] ) {
+		window[ `${ button }_${ side }` ].style.stroke = report[ button ].click ? '#f00' : '#000';
+		window[ `${ button }_${ side }` ].style.strokeWidth = report[ button ].click ? 10 : 2;
+	}
 
-	elem = document.getElementById( `menu_${ side }` );
-	elem.style.stroke = report.menu.click ? '#f00' : '#000';
-	elem.style.strokeWidth = report.menu.click ? 10 : 2;
+	for ( button of [ 'stick', 'upper', 'lower' ] ) {
+		window[ `${ button }_${ side }` ].style.fill = report[ button ].touch ? '#000' : '#aaa';
+	}
 
-	elem = document.getElementById( `upper_${ side }` );
-	elem.style.fill = report.upper.touch ? '#000' : '#aaa';
-	elem.style.stroke = report.upper.click ? '#f00' : '#000';
-	elem.style.strokeWidth = report.upper.click ? 10 : 2;
+	for ( button of [ 'trigger', 'grip' ] ) {
+		window[ `${ button }_touch_${ side }` ].style.stroke = report[ button ].touch ? '#000' : '#aaa';
+		window[ `${ button }_cap_${ side }` ].style.strokeDasharray = [ report[ button ].cap * 3.6, 1000 ].join( ' ' );
+	}
 
-	elem = document.getElementById( `lower_${ side }` );
-	elem.style.fill = report.lower.touch ? '#000' : '#aaa';
-	elem.style.stroke = report.lower.click ? '#f00' : '#000';
-	elem.style.strokeWidth = report.lower.click ? 10 : 2;
+	window[ `trigger_pull_${ side }` ].style.strokeDasharray = [ report.trigger.pull * 3.6, 1000 ].join( ' ' );
 
-	elem = document.getElementById( `trigger_touch_${ side }` );
-	elem.style.stroke = report.trigger.touch ? '#000' : '#aaa';
+	window[ `battery_${ side }` ].style.strokeDasharray = [ report.power.battery * 3.6, 1000 ].join( ' ' );
+	window[ `battery_connected_${ side }` ].style.fill = report.power.plugged_in ? '#fff' : 'none';
+	window[ `battery_charged_${ side }` ].style.fill = report.power.charged ? '#fff' : 'none';
+	window[ `battery_charging_${ side }` ].style.fill = report.power.charging ? '#fff' : 'none';
 
-	elem = document.getElementById( `trigger_cap_${ side }` );
-	elem.style.strokeDasharray = [ report.trigger.cap * 3.6, 1000 ].join( ' ' );
+	for ( imu of [ 'gyro', 'accel' ] ) {
+		for ( axis of [ 'x', 'y', 'z' ] ) {
+			const ratio = report[ imu ][ axis ] / 250.0;
+			const off = Math.max( 0, Math.min( 100, ( 100 + ratio ) ) - 1 )
+			const len = Math.min( 102, Math.abs( ratio ) + 2 );
+			window[ `${ imu }_${ axis }_${ side }` ].style.strokeDasharray = [0,off,len,1000].join( ' ' );
+		}
+	}
 
-	elem = document.getElementById( `trigger_pull_${ side }` );
-	elem.style.strokeDasharray = [ report.trigger.pull * 3.6, 1000 ].join( ' ' );
-
-	elem = document.getElementById( `trigger_click_${ side }` );
-	elem.style.strokeWidth = report.trigger.click ? 10 : 2;
-	elem.style.stroke = report.trigger.click ? '#f00' : '#000';
-
-	elem = document.getElementById( `grip_touch_${ side }` );
-	elem.style.stroke = report.grip.touch ? '#000' : '#aaa';
-
-	elem = document.getElementById( `grip_cap_${ side }` );
-	elem.style.strokeDasharray = [ report.grip.cap * 3.6, 1000 ].join( ' ' );
-
-	elem = document.getElementById( `grip_click_${ side }` );
-	elem.style.strokeWidth = report.grip.click ? 10 : 2;
-	elem.style.stroke = report.grip.click ? '#f00' : '#000';
-
-	elem = document.getElementById( `battery_${ side }` );
-	elem.style.strokeDasharray = [ report.power.battery * 3.6, 1000 ].join( ' ' );
-
-	elem = document.getElementById( `battery_plug_${ side }` );
-	elem.style.fill = report.power.plugged_in ? '#fff' : 'none';
-
-	elem = document.getElementById( `battery_full_${ side }` );
-	elem.style.fill = report.power.charged ? '#fff' : 'none';
-
-	elem = document.getElementById( `battery_charging_${ side }` );
-	elem.style.fill = report.power.charging ? '#fff' : 'none';
-
-	elem = document.getElementById( `accel_x_${ side }` );
-	elem.style.strokeDasharray = generate_dash_array( report.accel.x );
-
-	elem = document.getElementById( `accel_y_${ side }` );
-	elem.style.strokeDasharray = generate_dash_array( report.accel.y );
-
-	elem = document.getElementById( `accel_z_${ side }` );
-	elem.style.strokeDasharray = generate_dash_array( report.accel.z );
-
-	elem = document.getElementById( `gyro_x_${ side }` );
-	elem.style.strokeDasharray = generate_dash_array( report.gyro.x );
-
-	elem = document.getElementById( `gyro_y_${ side }` );
-	elem.style.strokeDasharray = generate_dash_array( report.gyro.y );
-
-	elem = document.getElementById( `gyro_z_${ side }` );
-	elem.style.strokeDasharray = generate_dash_array( report.gyro.z );
-
-	elem = document.getElementById( `raw_0_${ side }` );
-	elem.innerHTML = `00: ${
-		raw[ 0 ]
+	window[ `raw_0_${ side }` ].innerHTML = `00: ${
+		raw.slice(   0,   2 )
 	} <tspan>${
-		raw.slice( 1, 6 ).join( ' ' )
+		raw.slice(   3,  17 )
 	}</tspan> ${
-		raw.slice( 6, 8 ).join( ' ' )
+		raw.slice(  18,  23 )
 	} <tspan>${
-		raw.slice( 8, 11 ).join( ' ' )
+		raw.slice(  24,  32 )
 	}</tspan> ${
-		raw[ 11 ]
+		raw.slice(  33,  35 )
 	} <tspan>${
-		( '           #' + report.counters.poweron.toString( 10 ) ).slice( -11 )
+		`#${ report.counters.poweron.toString( 10 ) }          `.slice( 0, 11 )
 	}</tspan>`;
-	elem = document.getElementById( `raw_1_${ side }` );
-	elem.innerHTML = `16: <tspan>${
-		raw.slice( 16, 28 ).join( ' ' )
+
+	window[ `raw_1_${ side }` ].innerHTML = `16: <tspan>${
+		raw.slice(  48,  83 )
 	} ${
-		( "          #" + report.counters.timestamp1.toString( 10 ) ).slice( -11 )
+		`#${ report.counters.timestamp1.toString( 10 ) }          `.slice( 0, 11 )
 	}</tspan>`;
-	elem = document.getElementById( `raw_2_${ side }` );
-	elem.innerHTML = `32: ${
-		raw.slice( 32, 42 ).join( ' ' )
+
+	window[ `raw_2_${ side }` ].innerHTML = `32: ${
+		raw.slice(  96, 125 )
 	} <tspan>${
-		raw.slice( 42, 44 ).join( ' ' )
+		raw.slice( 126, 131 )
 	}</tspan> ${
-		raw.slice( 44, 48 ).join( ' ' )
+		raw.slice( 132, 143 )
 	}`;
-	elem = document.getElementById( `raw_3_${ side }` );
-	elem.innerHTML = `48: <tspan>${
-		( "          #" + report.counters.timestamp2.toString( 10 ) ).slice( -11 )
+
+	window[ `raw_3_${ side }` ].innerHTML = `48: <tspan>${
+		`#${ report.counters.timestamp2.toString( 10 ) }          `.slice( 0, 11 )
 	}</tspan> ${
-		raw.slice( 52, 64 ).join( ' ' )
+		raw.slice( 156, 191 )
 	}`;
-	elem = document.getElementById( `raw_4_${ side }` );
-	elem.innerHTML = "64: " + raw.slice( 64 ).join( ' ' ) + "         ";
+
+	window[ `raw_4_${ side }` ].innerHTML = `64: ${ raw.slice( 192 ) }         `;
+}
+
+function input_report_common( event ) {
+	return {
+		raw: [ ...new Uint8Array( event.data.buffer ) ].map( i => ( "00" + i.toString( 16 ) ).slice( -2 ) ).join( ' ' )
+	,	event: event
+	,	stick: {
+			x:  ( ( event.data.getUint8( 1 ) *  10 ) - 1275 ) / 1275.0
+		,	y:  ( ( event.data.getUint8( 2 ) *  10 ) - 1275 ) / 1275.0
+		}
+	,	trigger: {
+			pull: ( event.data.getUint8( 3 ) * 100 ) / 255.0
+		,	cap:  ( event.data.getUint8( 4 ) * 100 ) / 255.0
+		}
+	,	grip: {
+			cap:  ( event.data.getUint8( 5 ) * 100 ) / 255.0
+		}
+	,	gyro: {
+			x: event.data.getInt16( 16, true )
+		,	y: event.data.getInt16( 18, true )
+		,	z: event.data.getInt16( 20, true )
+		}
+	,	accel: {
+			x: event.data.getInt16( 22, true )
+		,	y: event.data.getInt16( 24, true )
+		,	z: event.data.getInt16( 26, true )
+		}
+	,	power: {
+			connected:   ( event.data.getUint8( 43 ) & 0x10 ) ? true : false
+		,	charging:    ( event.data.getUint8( 42 ) & 0x10 ) ? true : false
+		,	charged:     ( event.data.getUint8( 42 ) & 0x20 ) ? true : false
+		,	battery:   ( ( event.data.getUint8( 42 ) & 0x0f ) * 11 + 1 )
+		}
+	,	counters: {
+			poweron:    event.data.getUint32( 12, true )
+		,	timestamp1: event.data.getUint32( 28, true )
+		,	timestamp2: event.data.getUint32( 48, true )
+		}
+	,	upper:  {}
+	,	lower:  {}
+	,	menu:   {}
+	,	option: {}
+	};
 }
 
 async function input_report_L( event ) {
@@ -177,65 +166,28 @@ async function input_report_L( event ) {
 		return;
 	}
 
+	const report = input_report_common( event );
+
 	const buttons = event.data.getUint32( 8, true );
 
-	const raw = [ ...new Uint8Array( event.data.buffer ) ].map( i => ( "00" + i.toString( 16 ) ).slice( -2 ) );
+	report.option.click  = ( buttons & 0x000100 ) ? true : false;
 
-	const report = {
-		raw:     raw.join( ' ' )
-	,	stick: {
-			click: ( buttons & 0x000400 ) ? true : false
-		,	touch: ( buttons & 0x040000 ) ? true : false
-		,	x: ( ( event.data.getUint8(  1       ) *  10 ) - 1275 ) / 1275.0
-		,	y: ( ( event.data.getUint8(  2       ) *  10 ) - 1275 ) / 1275.0
-		}
-	,	trigger: {
-			click: ( buttons & 0x000040 ) ? true : false
-		,	touch: ( buttons & 0x008000 ) ? true : false
-		,	cap:   ( event.data.getUint8(  4       ) * 100 ) / 255.0
-		,	pull:  ( event.data.getUint8(  3       ) * 100 ) / 255.0
-		}
-	,	grip: {
-			click: ( buttons & 0x000010 ) ? true : false
-		,	touch: ( buttons & 0x080000 ) ? true : false
-		,	cap:   ( event.data.getUint8(  5       ) * 100 ) / 255.0
-		}
-	,	upper: {
-			click: ( buttons & 0x000008 ) ? true : false
-		,	touch: ( buttons & 0x010000 ) ? true : false
-		}
-	,	lower: {
-			click: ( buttons & 0x000001 ) ? true : false
-		,	touch: ( buttons & 0x020000 ) ? true : false
-		}
-	,	menu: {
-			click: ( buttons & 0x001000 ) ? true : false
-		}
-	,	option: {
-			click: ( buttons & 0x000100 ) ? true : false
-		}
-	,	gyro: {
-			x:   event.data.getInt16( 16, true )
-		,	y:   event.data.getInt16( 18, true )
-		,	z:   event.data.getInt16( 20, true )
-		}
-	,	accel: {
-			x:  event.data.getInt16( 22, true )
-		,	y:  event.data.getInt16( 24, true )
-		,	z:  event.data.getInt16( 26, true )
-		}
-	,	power: {
-			plugged_in: ( event.data.getUint8( 43 ) & 0x10 ) ? true : false
-		,	charging:   ( event.data.getUint8( 42 ) & 0x10 ) ? true : false
-		,	charged:    ( event.data.getUint8( 42 ) & 0x20 ) ? true : false
-		,	battery:    ( ( event.data.getUint8( 42 ) & 0x0f ) * 11 + 1 )
-		}
-	,	counters: {
-			poweron: event.data.getUint32( 12, true )
-		,	timestamp1: event.data.getUint32( 28, true )
-		,	timestamp2: event.data.getUint32( 48, true )
-		}
-	};
+	report.menu.click    = ( buttons & 0x001000 ) ? true : false;
+
+	report.trigger.click = ( buttons & 0x000040 ) ? true : false;
+	report.trigger.touch = ( buttons & 0x008000 ) ? true : false;
+
+	report.upper.click   = ( buttons & 0x000008 ) ? true : false;
+	report.upper.touch   = ( buttons & 0x010000 ) ? true : false;
+
+	report.lower.click   = ( buttons & 0x000001 ) ? true : false;
+	report.lower.touch   = ( buttons & 0x020000 ) ? true : false;
+
+	report.stick.click   = ( buttons & 0x000400 ) ? true : false;
+	report.stick.touch   = ( buttons & 0x040000 ) ? true : false;
+
+	report.grip.click    = ( buttons & 0x000010 ) ? true : false;
+	report.grip.touch    = ( buttons & 0x080000 ) ? true : false;
 
 	report_L = report;
 
@@ -248,63 +200,28 @@ async function input_report_R( event ) {
 		return;
 	}
 
+	const report = input_report_common( event );
+
 	const buttons = event.data.getUint32( 8, true );
 
-	const report = {
-		raw:     [ ...new Uint8Array( event.data.buffer ) ].map( i => ( "00" + i.toString( 16 ) ).slice( -2 ) ).join( ' ' )
-	,	stick: {
-			click: ( buttons & 0x000800 ) ? true : false
-		,	touch: ( buttons & 0x040000 ) ? true : false
-		,	x: ( ( event.data.getUint8(  1       ) *  10 ) - 1275 ) / 1275.0
-		,	y: ( ( event.data.getUint8(  2       ) *  10 ) - 1275 ) / 1275.0
-		}
-	,	trigger: {
-			click: ( buttons & 0x000080 ) ? true : false
-		,	touch: ( buttons & 0x008000 ) ? true : false
-		,	cap:   ( event.data.getUint8(  4       ) * 100 ) / 255.0
-		,	pull:  ( event.data.getUint8(  3       ) * 100 ) / 255.0
-		}
-	,	grip: {
-			click: ( buttons & 0x000020 ) ? true : false
-		,	touch: ( buttons & 0x080000 ) ? true : false
-		,	cap:   ( event.data.getUint8(  5       ) * 100 ) / 255.0
-		}
-	,	upper: {
-			click: ( buttons & 0x000004 ) ? true : false
-		,	touch: ( buttons & 0x010000 ) ? true : false
-		}
-	,	lower: {
-			click: ( buttons & 0x000002 ) ? true : false
-		,	touch: ( buttons & 0x020000 ) ? true : false
-		}
-	,	menu: {
-			click: ( buttons & 0x001000 ) ? true : false
-		}
-	,	option: {
-			click: ( buttons & 0x000200 ) ? true : false
-		}
-	,	gyro: {
-			x:   event.data.getInt16( 16, true )
-		,	y:   event.data.getInt16( 18, true )
-		,	z:   event.data.getInt16( 20, true )
-		}
-	,	accel: {
-			x:  event.data.getInt16( 22, true )
-		,	y:  event.data.getInt16( 24, true )
-		,	z:  event.data.getInt16( 26, true )
-		}
-	,	power: {
-			plugged_in: ( event.data.getUint8( 43 ) & 0x10 ) ? true : false
-		,	charging:   ( event.data.getUint8( 42 ) & 0x10 ) ? true : false
-		,	charged:    ( event.data.getUint8( 42 ) & 0x20 ) ? true : false
-		,	battery:    ( ( event.data.getUint8( 42 ) & 0x0f ) * 11 + 1 )
-		}
-	,	counters: {
-			poweron: event.data.getUint32( 12, true )
-		,	timestamp1: event.data.getUint32( 28, true )
-		,	timestamp2: event.data.getUint32( 48, true )
-		}
-	};
+	report.option.click  = ( buttons & 0x000200 ) ? true : false;
+
+	report.menu.click    = ( buttons & 0x001000 ) ? true : false;
+
+	report.trigger.click = ( buttons & 0x000080 ) ? true : false;
+	report.trigger.touch = ( buttons & 0x008000 ) ? true : false;
+
+	report.upper.click   = ( buttons & 0x000004 ) ? true : false;
+	report.upper.touch   = ( buttons & 0x010000 ) ? true : false;
+
+	report.lower.click   = ( buttons & 0x000002 ) ? true : false;
+	report.lower.touch   = ( buttons & 0x020000 ) ? true : false;
+
+	report.stick.click   = ( buttons & 0x000800 ) ? true : false;
+	report.stick.touch   = ( buttons & 0x040000 ) ? true : false;
+
+	report.grip.click    = ( buttons & 0x000020 ) ? true : false;
+	report.grip.touch    = ( buttons & 0x080000 ) ? true : false;
 
 	report_R = report;
 
@@ -389,8 +306,14 @@ async function request_controller( product_id ) {
 }
 
 addEventListener( 'DOMContentLoaded', async () => {
+	if ( typeof navigator.hid === 'undefined' ) {
+		setTimeout( () => { alert( 'This tool requires WebHID which is not supported on this browser.' ); } );
+		return;
+	}
+
 	navigator.hid.onconnect = device_connected_handler;
 	navigator.hid.ondisconnect = device_disconnected_handler;
+
 	for ( const device of await navigator.hid.getDevices() ) {
 		if ( device.vendorId !== 1356 ) { /* Sony */
 			continue;
@@ -409,6 +332,7 @@ addEventListener( 'DOMContentLoaded', async () => {
 		
 		device_connected( device );
 	}
+
 	document.querySelector( '#add_left' ).style.opacity = 0.9;
 	document.querySelector( '#add_right' ).style.opacity = 0.9;
 } );
@@ -435,14 +359,14 @@ addEventListener( 'DOMContentLoaded', async () => {
 		<path id="trigger_touch_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="trigger_cap_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<path id="trigger_pull_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0f0" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
-		<rect id="trigger_click_L" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<rect id="trigger_L" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
 		<text x="180" y="7.5" fill="#000">Trigger</text>
 	</g>
 
 	<g transform="translate( -180 280 )">
 		<path id="grip_touch_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="grip_cap_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
-		<rect id="grip_click_L" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<rect id="grip_L" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
 		<text x="180" y="7.5" fill="#000">Grip</text>
 	</g>
 
@@ -451,32 +375,36 @@ addEventListener( 'DOMContentLoaded', async () => {
 		<path id="battery_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0ff" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<rect x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
 		<g transform="translate( 0 10 )">
-			<text id="battery_plug_L" x="5">&#128268;</text>
+			<text id="battery_connected_L" x="5">&#128268;</text>
 			<text id="battery_charging_L" x="30">&#9889;</text>
-			<text id="battery_full_L" x="355">&#128267;</text>
+			<text id="battery_charged_L" x="355">&#128267;</text>
 			<text fill="#000" x="180" y="-2.5">Battery</text>
 		</g>
 	</g>
 
-	<g transform="translate( -105 -325 )">
-		<path id="accel_x_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" />
-		<path id="accel_y_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(90)" />
-		<path id="accel_z_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(-45)" />
-		<text y="125" fill="#000">Movement</text>
+	<g stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000">
+		<g transform="translate( -105 -325 )">
+			<path id="accel_x_L" d="M-100,0H100" />
+			<path id="accel_y_L" d="M-100,0H100" transform="rotate(90)" />
+			<path id="accel_z_L" d="M-100,0H100" transform="rotate(-45)" />
+			<text y="125" fill="#000" stroke="none">Movement</text>
+		</g>
+
+		<g transform="translate( 105 -325 )">
+			<path id="gyro_x_L" d="M-100,0H100" />
+			<path id="gyro_y_L" d="M-100,0H100" transform="rotate(90)" />
+			<path id="gyro_z_L" d="M-100,0H100" transform="rotate(-45)" />
+			<text y="125" fill="#000" stroke="none">Spinning</text>
+		</g>
 	</g>
 
-	<g transform="translate( 105 -325 )">
-		<path id="gyro_x_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" />
-		<path id="gyro_y_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(90)" />
-		<path id="gyro_z_L" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(-45)" />
-		<text y="125" fill="#000">Spinning</text>
+	<g style="font: 15px monospace" fill="#000">
+		<text id="raw_0_L" y="-180"></text>
+		<text id="raw_1_L" y="-165"></text>
+		<text id="raw_2_L" y="-150"></text>
+		<text id="raw_3_L" y="-135"></text>
+		<text id="raw_4_L" y="-120"></text>
 	</g>
-
-	<text id="raw_0_L" y="-180" style="font: 15px monospace" fill="#000">00: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
-	<text id="raw_1_L" y="-165" style="font: 15px monospace" fill="#000">16: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
-	<text id="raw_2_L" y="-150" style="font: 15px monospace" fill="#000">32: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
-	<text id="raw_3_L" y="-135" style="font: 15px monospace" fill="#000">48: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
-	<text id="raw_4_L" y="-120" style="font: 15px monospace" fill="#000">64: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00         </tspan></text>
 
 	<a href="#" onclick="request_controller( 3653 )" id="add_left" style="opacity: 0; transition: opacity 1s">
 		<rect x="-200" y="-425" width="400" height="850" rx="50" stroke-width="25px" stroke="#000" fill="#fff" />
@@ -506,14 +434,14 @@ addEventListener( 'DOMContentLoaded', async () => {
 		<path id="trigger_touch_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="trigger_cap_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<path id="trigger_pull_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0f0" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
-		<rect id="trigger_click_R" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<rect id="trigger_R" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
 		<text x="180" y="7.5" fill="#000">Trigger</text>
 	</g>
 
 	<g transform="translate( -180 280 )">
 		<path id="grip_touch_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="grip_cap_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
-		<rect id="grip_click_R" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
+		<rect id="grip_R" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
 		<text x="180" y="7.5" fill="#000">Grip</text>
 	</g>
 
@@ -521,31 +449,35 @@ addEventListener( 'DOMContentLoaded', async () => {
 		<path d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="battery_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0ff" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<rect x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
-		<text id="battery_plug_R" x="5" y="10">&#128268;</text>
+		<text id="battery_connected_R" x="5" y="10">&#128268;</text>
 		<text id="battery_charging_R" x="30" y="10">&#9889;</text>
-		<text id="battery_full_R" x="355" y="10">&#128267;</text>
+		<text id="battery_charged_R" x="355" y="10">&#128267;</text>
 		<text fill="#000" x="180" y="7.5">Battery</text>
 	</g>
 
-	<g transform="translate( 105 -325 )">
-		<path id="accel_x_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" />
-		<path id="accel_y_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(90)" />
-		<path id="accel_z_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(-45)" />
-		<text y="125" fill="#000">Movement</text>
+	<g stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000">
+		<g transform="translate( 105 -325 )">
+			<path id="accel_x_R" d="M-100,0H100" />
+			<path id="accel_y_R" d="M-100,0H100" transform="rotate(90)" />
+			<path id="accel_z_R" d="M-100,0H100" transform="rotate(-45)" />
+			<text y="125" fill="#000" stroke="none">Movement</text>
+		</g>
+
+		<g transform="translate( -105 -325 )">
+			<path id="gyro_x_R" d="M-100,0H100" />
+			<path id="gyro_y_R" d="M-100,0H100" transform="rotate(90)" />
+			<path id="gyro_z_R" d="M-100,0H100" transform="rotate(-45)" />
+			<text y="125" fill="#000" stroke="none">Spinning</text>
+		</g>
 	</g>
 
-	<g transform="translate( -105 -325 )">
-		<path id="gyro_x_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" />
-		<path id="gyro_y_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(90)" />
-		<path id="gyro_z_R" d="M-100,0H100" stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000" transform="rotate(-45)" />
-		<text y="125" fill="#000">Spinning</text>
+	<g style="font: 15px monospace" fill="#000">
+		<text id="raw_0_R" y="-180"></text>
+		<text id="raw_1_R" y="-165"></text>
+		<text id="raw_2_R" y="-150"></text>
+		<text id="raw_3_R" y="-135"></text>
+		<text id="raw_4_R" y="-120"></text>
 	</g>
-
-	<text id="raw_0_R" y="-180" style="font: 15px monospace" fill="#000">00: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
-	<text id="raw_1_R" y="-165" style="font: 15px monospace" fill="#000">16: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
-	<text id="raw_2_R" y="-150" style="font: 15px monospace" fill="#000">32: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
-	<text id="raw_3_R" y="-135" style="font: 15px monospace" fill="#000">48: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</tspan></text>
-	<text id="raw_4_R" y="-120" style="font: 15px monospace" fill="#000">64: <tspan>00 00 00 00 00 00 00 00 00 00 00 00 00         </tspan></text>
 
 	<a href="#" onclick="request_controller( 3654 )" id="add_right" style="opacity: 0; transition: opacity 1s">
 		<rect x="-200" y="-425" width="400" height="850" rx="50" stroke-width="25px" stroke="#000" fill="#fff" />
