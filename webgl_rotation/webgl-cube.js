@@ -95,9 +95,6 @@ async function main() {
 
     // Draw the scene repeatedly
     function render(now) {
-        now *= 0.001; // convert to seconds
-        deltaTime = now - then;
-        then = now;
         
         //add gyro values to a position variable.
         //This allows for more absolute positioning
