@@ -1,7 +1,6 @@
 import { initBuffers } from "./init-buffers.js";
 import { drawScene } from "./draw-scene.js";
 
-let deltaTime = 0;
 let gyroX = 0.0;
 let gyroY = 0.0;
 let gyroZ = 0.0;
@@ -22,10 +21,6 @@ const DUAL_SENSE_BT_INPUT_REPORT_0x01_SIZE = 9;
 const DUAL_SENSE_BT_INPUT_REPORT_0x31_SIZE = 77;
 
 main();
-
-//
-// start here
-//
 async function main() {
     const canvas = document.querySelector("#glcanvas");
     // Initialize the GL context
@@ -45,7 +40,6 @@ async function main() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Vertex shader program
-
     const vsSource = `
     attribute vec4 aVertexPosition;
     attribute vec4 aVertexColor;
@@ -62,7 +56,6 @@ async function main() {
   `;
 
     // Fragment shader program
-
     const fsSource = `
     varying lowp vec4 vColor;
 
@@ -105,18 +98,24 @@ async function main() {
         now *= 0.001; // convert to seconds
         deltaTime = now - then;
         then = now;
-
-        prevRotx = prevRotx + gyroX / 10000;
-        prevRoty = prevRoty + gyroY / 10000;
-        prevRotz = prevRotz + gyroZ / 10000;
+        
+        //add gyro values to a position variable.
+        //This allows for more absolute positioning
+        //Divide by a very large number because gyro inputs are very large compared to radians.
+        let scalar = 10000;
+        prevRotx += gyroX / scalar;
+        prevRoty += gyroY / scalar;
+        prevRotz += gyroZ / scalar;
 
         drawScene(gl, programInfo, buffers, prevRotx, prevRoty, prevRotz);
 
-        prevRotx = prevRotx * 0.92;
-        prevRoty = prevRoty * 0.92;
-        prevRotz = prevRotz * 0.92;
-
-        console.log(gyroX, gyroY, gyroZ);
+        //Add some decay to the rotation values.
+        //This prevents drift from becoming an issue, and recenters the cube.
+        //Reduce decay value for more absolute visuals.
+        let decay = 0.92;
+        prevRotx *= decay;
+        prevRoty *= decay;
+        prevRotz *= decay;
 
         requestAnimationFrame(render);
     }
@@ -133,14 +132,12 @@ function initShaderProgram(gl, vsSource, fsSource) {
     const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
 
     // Create the shader program
-
     const shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
     gl.attachShader(shaderProgram, fragmentShader);
     gl.linkProgram(shaderProgram);
 
     // If creating the shader program failed, alert
-
     if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
         alert(
             `Unable to initialize the shader program: ${gl.getProgramInfoLog(
@@ -161,15 +158,10 @@ function loadShader(gl, type, source) {
     const shader = gl.createShader(type);
 
     // Send the source to the shader object
-
     gl.shaderSource(shader, source);
-
-    // Compile the shader program
-
     gl.compileShader(shader);
 
     // See if it compiled successfully
-
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
         alert(
             `An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`
@@ -181,42 +173,17 @@ function loadShader(gl, type, source) {
     return shader;
 }
 
-const hex8 = (value) => {
-    return ("00" + (value >>> 0).toString(16)).substr(-2);
-};
-const hex16 = (value) => {
-    return ("0000" + (value >>> 0).toString(16)).substr(-4);
-};
-const hex32 = (value) => {
-    return ("00000000" + (value >>> 0).toString(16)).substr(-8);
-};
-
-const parseHex = (value) => {
-    if (value == "") return 0;
-
-    return parseInt(value, 16);
-};
-
-function onInputReport(event) {
-    let reportId = event.reportId;
-    let report = event.data;
-    let reportString = hex8(reportId);
-    for (let i = 0; i < report.byteLength; ++i) reportString += " " + hex8(report.getUint8(i));
-
-
-    if (reportId == 0x01) handleBluetoothInputReport01(report);
-    else if (reportId == 0x31) handleBluetoothInputReport31(report);
-    else return;
-
-}
-
+//webhid cannot be accessed without a user input, so we spawn a simple button here.
 const button = document.querySelector('button');
 button.addEventListener('click', async function () {
-
+    //opens the hid selector prompt.
+    //I should probably add a filter so only sony devices show up, but I can't be fucked to right now.
     const devices = await navigator.hid.requestDevice({ filters: [] });
 
+    //is this needed? I don't know.
     let device = devices[0];
 
+    //Make sure that the device is opened, simple failsafe.
     if (!device.opened) {
         await device.open();
         if (!device.opened) {
@@ -225,46 +192,21 @@ button.addEventListener('click', async function () {
         }
     }
 
+    //attach the input handler.
     device.addEventListener("inputreport", (event) => {
-        onInputReport(event);
+        handleBluetoothInputReport31(event.data);
     });
-
 
     console.log("Input report bound");
 });
 
-
-function handleBluetoothInputReport01(report) {
-    if (report.byteLength != DUAL_SENSE_BT_INPUT_REPORT_0x01_SIZE) {
-        return;
-    }
-
-    let axes0 = report.getUint8(0);
-    let axes1 = report.getUint8(1);
-    let axes2 = report.getUint8(2);
-    let axes3 = report.getUint8(3);
-    let axes4 = report.getUint8(7);
-    let axes5 = report.getUint8(8);
-
-}
-
 function handleBluetoothInputReport31(report) {
+    //there is a chance that the user has plugged in their controller, or that input report 0x05 has not been read yet.
+    //In either of these cases, this function will not work quite right, so we just exit.
     if (report.byteLength != DUAL_SENSE_BT_INPUT_REPORT_0x31_SIZE) {
         return;
     }
 
-    // byte 0?
-    let axes0 = report.getUint8(1);
-    let axes1 = report.getUint8(2);
-    let axes2 = report.getUint8(3);
-    let axes3 = report.getUint8(4);
-    let axes4 = report.getUint8(5);
-    let axes5 = report.getUint8(6);
-
-    let timestamp0 = report.getUint8(12);
-    let timestamp1 = report.getUint8(13);
-    let timestamp2 = report.getUint8(14);
-    let timestamp3 = report.getUint8(15);
     let gyroX0 = report.getUint8(16);
     let gyroX1 = report.getUint8(17);
     let gyroY0 = report.getUint8(18);
@@ -278,9 +220,8 @@ function handleBluetoothInputReport31(report) {
     let accelZ0 = report.getUint8(26);
     let accelZ1 = report.getUint8(27);
 
-
-
-
+    //I don't know what this math does, or why it's here
+    //but I copied it from another project, and it seems to work.
     let gyrox = (gyroX1 << 8) | gyroX0;
     if (gyrox > 0x7fff) gyrox -= 0x10000;
     let gyroy = (gyroY1 << 8) | gyroY0;
@@ -294,16 +235,10 @@ function handleBluetoothInputReport31(report) {
     let accelz = (accelZ1 << 8) | accelZ0;
     if (accelz > 0x7fff) accelz -= 0x10000;
 
-    /*
-    gyroXText.value = gyrox;
-    gyroYText.value = gyroy;
-    gyroZText.value = gyroz;
-    accelXText.value = accelx;
-    accelYText.value = accely;
-    accelZText.value = accelz;
-    */
-
-    gyroX = gyrox * 0.02 + gyroX * 0.98;
-    gyroY = gyroy * 0.02 + gyroY * 0.98;
-    gyroZ = gyroz * 0.02 + gyroZ * 0.98;
+    //compute the weighted average of the gyro values.
+    //without averaging, the gyro rotation is too shaky to render well.
+    let smoothing = 0.98
+    gyroX = gyrox * (1-smoothing) + gyroX * smoothing;
+    gyroY = gyroy * (1-smoothing) + gyroY * smoothing;
+    gyroZ = gyroz * (1-smoothing) + gyroZ * smoothing;
 }
