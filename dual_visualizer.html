@@ -26,7 +26,7 @@ let controller_L;
 let controller_R;
 let report_L;
 let report_R;
-let smoothed = {R:{gyro:{x:0,y:0,z:0},accel:{x:0,y:0,z:0}},L:{gyro:{x:0,y:0,z:0},accel:{x:0,y:0,z:0}}};
+let smoothed = {R:{gyro:{x:0,y:0,z:0},accel:{x:0,y:0,z:0},timestamp:0},L:{gyro:{x:0,y:0,z:0},accel:{x:0,y:0,z:0},timestamp:0}};
 
 async function verify_bluetooth( d ) {
 	// Search for a GAME_PAD usage on a GENERIC_DESKTOP usage page
@@ -214,6 +214,25 @@ function input_report_common( event ) {
 	};
 }
 
+let tracker = {L:[],R:[]};
+
+function input_report_smoothing( side, timestamp, report ) {
+	// Calculate the exponential decay factor for ~0.25 seconds
+	// Caps the factor to be between 0.0 and 0.999 inclusive
+	// Generally it will be ~0.99 at ~400 updates per second
+	const factor = Math.min( 0.999, Math.max( 0.0,
+		Math.pow( Math.E, ( timestamp - smoothed[ side ].timestamp ) / -250.0 )
+	) );
+	smoothed[ side ].timestamp = timestamp;
+
+	for ( imu of [ 'accel', 'gyro' ] ) {
+		for ( axis of [ 'x', 'y', 'z' ] ) {
+			smoothed[ side ][ imu ][ axis ] *= factor;
+			smoothed[ side ][ imu ][ axis ] += ( report[ imu ][ axis ] * ( 1.0 - factor ) );
+		}
+	}
+}
+
 async function input_report_L( event ) {
 	/* Only process the 'full' reports with all IMU data */
 	if ( event.reportId != 0x31 ) {
@@ -244,11 +263,8 @@ async function input_report_L( event ) {
 	report.grip.touch    = ( buttons & 0x080000 ) ? true : false;
 
 	report_L = report;
-	for ( imu of [ 'accel', 'gyro' ] ) {
-		for ( axis of [ 'x', 'y', 'z' ] ) {
-			smoothed[ 'L' ][ imu ][ axis ] = ( smoothed[ 'L' ][ imu ][ axis ] * 0.98 ) + ( report[ imu ][ axis ] * 0.02 );
-		}
-	}
+
+	input_report_smoothing( 'L', event.timeStamp, report );
 
 	update_display( report, 'L' );
 }
@@ -283,11 +299,8 @@ async function input_report_R( event ) {
 	report.grip.touch    = ( buttons & 0x080000 ) ? true : false;
 
 	report_R = report;
-	for ( imu of [ 'accel', 'gyro' ] ) {
-		for ( axis of [ 'x', 'y', 'z' ] ) {
-			smoothed[ 'R' ][ imu ][ axis ] = ( smoothed[ 'R' ][ imu ][ axis ] * 0.98 ) + ( report[ imu ][ axis ] * 0.02 );
-		}
-	}
+
+	input_report_smoothing( 'R', event.timeStamp, report );
 
 	update_display( report, 'R' );
 }
@@ -369,11 +382,14 @@ async function request_controller( product_id ) {
 	}
 }
 
-addEventListener( 'DOMContentLoaded', async () => {
+addEventListener( 'DOMContentLoaded', async ( e ) => {
 	if ( typeof navigator.hid === 'undefined' ) {
 		setTimeout( () => { alert( 'This tool requires WebHID which is not supported on this browser.' ); } );
 		return;
 	}
+
+	smoothed[ 'R' ].timestamp = e.timeStamp;
+	smoothed[ 'L' ].timestamp = e.timeStamp;
 
 	navigator.hid.onconnect = device_connected_handler;
 	navigator.hid.ondisconnect = device_disconnected_handler;
