@@ -1,8 +1,12 @@
-This is THE FIRST _FULLY_ open source project working on reverse engineering the PSVR2 Controllers with adaptive trigger support.
+This is THE FIRST _FULLY_ open source project working on reverse engineering the PSVR2 Controllers with adaptive trigger support. Check out some of the visuals below!
+- awesometornado.github.io/PSVR2-controller-explorer/dual_visualizer.html
+- awesometornado.github.io/PSVR2-controller-explorer/rotation_visualizer.html
+- https://awesometornado.github.io/PSVR2-controller-explorer/homebrew.html
 
 If you are like me, and are frustrated by the abundance of closed source projects surrounding the PSVR2 and its incredible features, Welcome! This project is still in its infancy, and I don't have much time to work on it, but it already has support for the following:
 - Adaptive Triggers
 - Multiple Rumble Modes
+- Controller IMU data
 
 Though not likely to happen, it is also my goal to get the following working:
 - Audio based haptics (through bluetooth)
