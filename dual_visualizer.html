@@ -43,6 +43,70 @@ async function verify_bluetooth( d ) {
 		.reduce( ( a, c ) => a || c );
 }
 
+function wireframe_cube( imu ) {
+	const d = [];
+	const v = [];
+	const ax = imu[ 'accel' ][ 'x' ] / -100.0;
+	const ay = imu[ 'accel' ][ 'y' ] / -100.0;
+	const az = imu[ 'accel' ][ 'z' ] / -100.0;
+	const zc = Math.cos( imu[ 'gyro' ][ 'z' ] / 10000.0 );
+	const zs = Math.sin( imu[ 'gyro' ][ 'z' ] / 10000.0 );
+	const yc = Math.cos( imu[ 'gyro' ][ 'y' ] / 10000.0 );
+	const ys = Math.sin( imu[ 'gyro' ][ 'y' ] / 10000.0 );
+	const xc = Math.cos( imu[ 'gyro' ][ 'x' ] / 10000.0 );
+	const xs = Math.sin( imu[ 'gyro' ][ 'x' ] / 10000.0 );
+	
+	for ( let i = 0; i < 8; i++ ) {
+		let vx = ( i & 1 ) ? -100 : 100;
+		let vy = ( i & 2 ) ? -100 : 100;
+		let vz = ( i & 4 ) ? -100 : 100;
+		let t;
+
+		 t = ( zc * vx ) - ( zs * vy );
+		vy = ( zs * vx ) + ( zc * vy );
+		vx = t;
+
+		 t = ( yc * vx ) - ( ys * vz );
+		vz = ( ys * vx ) + ( yc * vz );
+		vx = t;
+
+		 t = ( xc * vy ) - ( xs * vz );
+		vz = ( xs * vy ) + ( xc * vz );
+		vy = t;
+
+		vx += ax;
+		vy += ay
+		vz += az
+
+		vx = ( vx * 500.0 ) / ( vz + 500.0 );
+		vy = ( vy * 500.0 ) / ( vz + 500.0 );
+
+		v[ i ] = { x: Math.floor( vx ), y: Math.floor( vy ) };
+	}
+
+	for ( const o of [ 0, 4 ] ) {
+		d.push( 'M', v[ o ].x, ',', v[ o ].y );
+
+		for ( const i of [ 1, 3, 2 ] ) {
+			d.push( 'L', v[ o + i ].x, ',', v[ o + i ].y );
+		}
+		
+		d.push( 'z' );
+	}
+
+	for ( const i of [ 0, 1, 2, 3 ] ) {
+		d.push( 'M', v[ i ].x, ',', v[ i ].y );
+		d.push( 'L', v[ i + 4 ].x, ',', v[ i + 4 ].y );
+	}
+
+	d.push( 'M0,0L' );
+	d.push( Math.floor( ( ax * 500.0 ) / ( az + 500.0 ) ) );
+	d.push( ',' );
+	d.push( Math.floor( ( ay * 500.0 ) / ( az + 500.0 ) ) );
+
+	return d.join( '' );
+}
+
 async function update_display( report, side ) {
 	const raw = report.raw;
 	let elem;
@@ -72,67 +136,7 @@ async function update_display( report, side ) {
 	window[ `battery_charged_${ side }` ].style.fill = report.power.charged ? '#fff' : 'none';
 	window[ `battery_charging_${ side }` ].style.fill = report.power.charging ? '#fff' : 'none';
 
-	{
-		const v = [];
-		for ( let i = 0; i < 8; i++ ) {
-			let vx = ( i & 1 ) ? -100 : 100;
-			let vy = ( i & 2 ) ? -100 : 100;
-			let vz = ( i & 4 ) ? -100 : 100;
-			let zc = Math.cos( smoothed[ side ][ 'gyro' ][ 'z' ] / 10000.0 );
-			let zs = Math.sin( smoothed[ side ][ 'gyro' ][ 'z' ] / 10000.0 );
-			let yc = Math.cos( smoothed[ side ][ 'gyro' ][ 'y' ] / 10000.0 );
-			let ys = Math.sin( smoothed[ side ][ 'gyro' ][ 'y' ] / 10000.0 );
-			let xc = Math.cos( smoothed[ side ][ 'gyro' ][ 'x' ] / 10000.0 );
-			let xs = Math.sin( smoothed[ side ][ 'gyro' ][ 'x' ] / 10000.0 );
-			let t;
-
-			 t = ( zc * vx ) - ( zs * vy );
-			vy = ( zs * vx ) + ( zc * vy );
-			vx = t;
-
-			 t = ( yc * vx ) - ( ys * vz );
-			vz = ( ys * vx ) + ( yc * vz );
-			vx = t;
-
-			 t = ( xc * vy ) - ( xs * vz );
-			vz = ( xs * vy ) + ( xc * vz );
-			vy = t;
-
-			vx -= smoothed[ side ][ 'accel' ][ 'x' ] / 100;
-			vy -= smoothed[ side ][ 'accel' ][ 'y' ] / 100;
-			vz -= smoothed[ side ][ 'accel' ][ 'z' ] / 100;
-
-			vx = ( vx * 500 ) / ( vz + 500 );
-			vy = ( vy * 500 ) / ( vz + 500 );
-
-			v[ i ] = { x: Math.floor( vx ), y: Math.floor( vy ) };
-		}
-			
-		{
-			let vx = smoothed[ side ][ 'accel' ][ 'x' ] / -100;
-			let vy = smoothed[ side ][ 'accel' ][ 'y' ] / -100;
-			let vz = smoothed[ side ][ 'accel' ][ 'z' ] / -100;
-			vx = ( vx * 500 ) / ( vz + 500 );
-			vy = ( vy * 500 ) / ( vz + 500 );
-
-			v[ 8 ] = { x: Math.floor( vx ), y: Math.floor( vy ) };
-		}
-
-		let d = `M${ v[ 0 ].x },${ v[ 0 ].y }`;
-		for ( const i of [ 1, 3, 2 ] ) {
-			d += ` L${ v[ i ].x },${ v[ i ].y }`;
-		}
-		d += `zM${ v[ 4 ].x },${ v[ 4 ].y }`;
-		for ( const i of [ 5, 7, 6 ] ) {
-			d += ` L${ v[ i ].x },${ v[ i ].y }`;
-		}
-		d += 'z';
-		for ( const i of [ 0, 1, 2, 3 ] ) {
-			d += `M${ v[ i ].x },${ v[ i ].y }L${ v[ i + 4 ].x },${ v[ i + 4 ].y }`;
-		}
-		d += `M0,0L${ v[ 8 ].x },${ v[ 8 ].y }`;
-		window[ `cube_${ side }` ].setAttribute( 'd', d );
-	}
+	window[ `cube_${ side }` ].setAttribute( 'd', wireframe_cube( smoothed[ side ] ) );
 
 	window[ `raw_0_${ side }` ].innerHTML = `00: ${
 		raw.slice(   0,   2 )
