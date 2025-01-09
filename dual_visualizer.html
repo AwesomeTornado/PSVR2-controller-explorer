@@ -26,6 +26,7 @@ let controller_L;
 let controller_R;
 let report_L;
 let report_R;
+let smoothed = {R:{gyro:{x:0,y:0,z:0},accel:{x:0,y:0,z:0},timestamp:0},L:{gyro:{x:0,y:0,z:0},accel:{x:0,y:0,z:0},timestamp:0}};
 
 async function verify_bluetooth( d ) {
 	// Search for a GAME_PAD usage on a GENERIC_DESKTOP usage page
@@ -40,6 +41,70 @@ async function verify_bluetooth( d ) {
 		)
 		.reduce( ( a, c ) => a || c )
 		.reduce( ( a, c ) => a || c );
+}
+
+function wireframe_cube( imu ) {
+	const d = [];
+	const v = [];
+	const ax = imu[ 'accel' ][ 'x' ] / -100.0;
+	const ay = imu[ 'accel' ][ 'y' ] / -100.0;
+	const az = imu[ 'accel' ][ 'z' ] / -100.0;
+	const zc = Math.cos( imu[ 'gyro' ][ 'z' ] / 10000.0 );
+	const zs = Math.sin( imu[ 'gyro' ][ 'z' ] / 10000.0 );
+	const yc = Math.cos( imu[ 'gyro' ][ 'y' ] / 10000.0 );
+	const ys = Math.sin( imu[ 'gyro' ][ 'y' ] / 10000.0 );
+	const xc = Math.cos( imu[ 'gyro' ][ 'x' ] / 10000.0 );
+	const xs = Math.sin( imu[ 'gyro' ][ 'x' ] / 10000.0 );
+	
+	for ( let i = 0; i < 8; i++ ) {
+		let vx = ( i & 1 ) ? -100 : 100;
+		let vy = ( i & 2 ) ? -100 : 100;
+		let vz = ( i & 4 ) ? -100 : 100;
+		let t;
+
+		 t = ( zc * vx ) - ( zs * vy );
+		vy = ( zs * vx ) + ( zc * vy );
+		vx = t;
+
+		 t = ( yc * vx ) - ( ys * vz );
+		vz = ( ys * vx ) + ( yc * vz );
+		vx = t;
+
+		 t = ( xc * vy ) - ( xs * vz );
+		vz = ( xs * vy ) + ( xc * vz );
+		vy = t;
+
+		vx += ax;
+		vy += ay
+		vz += az
+
+		vx = ( vx * 500.0 ) / ( vz + 500.0 );
+		vy = ( vy * 500.0 ) / ( vz + 500.0 );
+
+		v[ i ] = { x: Math.floor( vx ), y: Math.floor( vy ) };
+	}
+
+	for ( const o of [ 0, 4 ] ) {
+		d.push( 'M', v[ o ].x, ',', v[ o ].y );
+
+		for ( const i of [ 1, 3, 2 ] ) {
+			d.push( 'L', v[ o + i ].x, ',', v[ o + i ].y );
+		}
+		
+		d.push( 'z' );
+	}
+
+	for ( const i of [ 0, 1, 2, 3 ] ) {
+		d.push( 'M', v[ i ].x, ',', v[ i ].y );
+		d.push( 'L', v[ i + 4 ].x, ',', v[ i + 4 ].y );
+	}
+
+	d.push( 'M0,0L' );
+	d.push( Math.floor( ( ax * 500.0 ) / ( az + 500.0 ) ) );
+	d.push( ',' );
+	d.push( Math.floor( ( ay * 500.0 ) / ( az + 500.0 ) ) );
+
+	return d.join( '' );
 }
 
 async function update_display( report, side ) {
@@ -71,14 +136,7 @@ async function update_display( report, side ) {
 	window[ `battery_charged_${ side }` ].style.fill = report.power.charged ? '#fff' : 'none';
 	window[ `battery_charging_${ side }` ].style.fill = report.power.charging ? '#fff' : 'none';
 
-	for ( imu of [ 'gyro', 'accel' ] ) {
-		for ( axis of [ 'x', 'y', 'z' ] ) {
-			const ratio = report[ imu ][ axis ] / 250.0;
-			const off = Math.max( 0, Math.min( 100, ( 100 + ratio ) ) - 1 )
-			const len = Math.min( 102, Math.abs( ratio ) + 2 );
-			window[ `${ imu }_${ axis }_${ side }` ].style.strokeDasharray = [0,off,len,1000].join( ' ' );
-		}
-	}
+	window[ `cube_${ side }` ].setAttribute( 'd', wireframe_cube( smoothed[ side ] ) );
 
 	window[ `raw_0_${ side }` ].innerHTML = `00: ${
 		raw.slice(   0,   2 )
@@ -160,6 +218,25 @@ function input_report_common( event ) {
 	};
 }
 
+let tracker = {L:[],R:[]};
+
+function input_report_smoothing( side, timestamp, report ) {
+	// Calculate the exponential decay factor for ~0.25 seconds
+	// Caps the factor to be between 0.0 and 0.999 inclusive
+	// Generally it will be ~0.99 at ~400 updates per second
+	const factor = Math.min( 0.999, Math.max( 0.0,
+		Math.pow( Math.E, ( timestamp - smoothed[ side ].timestamp ) / -250.0 )
+	) );
+	smoothed[ side ].timestamp = timestamp;
+
+	for ( imu of [ 'accel', 'gyro' ] ) {
+		for ( axis of [ 'x', 'y', 'z' ] ) {
+			smoothed[ side ][ imu ][ axis ] *= factor;
+			smoothed[ side ][ imu ][ axis ] += ( report[ imu ][ axis ] * ( 1.0 - factor ) );
+		}
+	}
+}
+
 async function input_report_L( event ) {
 	/* Only process the 'full' reports with all IMU data */
 	if ( event.reportId != 0x31 ) {
@@ -190,6 +267,8 @@ async function input_report_L( event ) {
 	report.grip.touch    = ( buttons & 0x080000 ) ? true : false;
 
 	report_L = report;
+
+	input_report_smoothing( 'L', event.timeStamp, report );
 
 	update_display( report, 'L' );
 }
@@ -224,6 +303,8 @@ async function input_report_R( event ) {
 	report.grip.touch    = ( buttons & 0x080000 ) ? true : false;
 
 	report_R = report;
+
+	input_report_smoothing( 'R', event.timeStamp, report );
 
 	update_display( report, 'R' );
 }
@@ -305,11 +386,14 @@ async function request_controller( product_id ) {
 	}
 }
 
-addEventListener( 'DOMContentLoaded', async () => {
+addEventListener( 'DOMContentLoaded', async ( e ) => {
 	if ( typeof navigator.hid === 'undefined' ) {
 		setTimeout( () => { alert( 'This tool requires WebHID which is not supported on this browser.' ); } );
 		return;
 	}
+
+	smoothed[ 'R' ].timestamp = e.timeStamp;
+	smoothed[ 'L' ].timestamp = e.timeStamp;
 
 	navigator.hid.onconnect = device_connected_handler;
 	navigator.hid.ondisconnect = device_disconnected_handler;
@@ -333,29 +417,31 @@ addEventListener( 'DOMContentLoaded', async () => {
 		device_connected( device );
 	}
 
-	document.querySelector( '#add_left' ).style.opacity = 0.9;
-	document.querySelector( '#add_right' ).style.opacity = 0.9;
+	window[ 'add_left' ].style.opacity = 0.9;
+	window[ 'add_right' ].style.opacity = 0.9;
 } );
 </script></head><body><svg width="100%" height="100%" viewbox="-450 -450 900 900" preserveAspectRatio="xMidYMid meet" stroke="none" stroke-width="2" fill="none" stroke-linecap="butt" font-size="25px">
 <g transform="translate( -225 0 )">
-	<rect x="-105" y="-105" width="210" height="210" rx="35" stroke-width="10" stroke="#000" />
-	<circle id="stick_L" r="10" stroke="#000" fill="#aaa" />
+	<g transform="translate( 0, 95 )">
+		<rect x="-105" y="-105" width="210" height="210" rx="35" stroke-width="10" stroke="#000" />
+		<circle id="stick_L" r="10" stroke="#000" fill="#aaa" />
+	</g>
 
-	<g transform="translate( 155 -30 )">
+	<g transform="translate( 155 65 )">
 		<circle id="upper_L" r="20" stroke="#000" fill="#aaa" />
 		<path d="M0,-12l10,20h-20z" stroke="#fff" />
 	</g>
 
-	<g transform="translate( 155, 30 )">
+	<g transform="translate( 155, 125 )">
 		<circle id="lower_L" r="20" stroke="#000" fill="#aaa" />
 		<rect x="-10" y="-10" width="20" height="20" stroke="#fff" />
 	</g>
 
-	<circle id="menu_L" cx="0" cy="155" r="20" stroke="#000" fill="#aaa" />
+	<circle id="menu_L" cx="0" cy="250" r="20" stroke="#000" fill="#aaa" />
 
-	<rect id="option_L" x="-175" y="-50" width="40" height="100" rx="20" fill="#aaa" stroke="#000" />
+	<rect id="option_L" x="-175" y="45" width="40" height="100" rx="20" fill="#aaa" stroke="#000" />
 
-	<g transform="translate( -180 220 )">
+	<g transform="translate( -180 300 )">
 		<path id="trigger_touch_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="trigger_cap_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<path id="trigger_pull_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0f0" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
@@ -363,14 +449,14 @@ addEventListener( 'DOMContentLoaded', async () => {
 		<text x="180" y="7.5" fill="#000">Trigger</text>
 	</g>
 
-	<g transform="translate( -180 280 )">
+	<g transform="translate( -180 350 )">
 		<path id="grip_touch_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="grip_cap_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<rect id="grip_L" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
 		<text x="180" y="7.5" fill="#000">Grip</text>
 	</g>
 
-	<g transform="translate( -180 340 )">
+	<g transform="translate( -180 400 )">
 		<path d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="battery_L" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0ff" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<rect x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
@@ -382,28 +468,16 @@ addEventListener( 'DOMContentLoaded', async () => {
 		</g>
 	</g>
 
-	<g stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000">
-		<g transform="translate( -105 -325 )">
-			<path id="accel_x_L" d="M-100,0H100" />
-			<path id="accel_y_L" d="M-100,0H100" transform="rotate(90)" />
-			<path id="accel_z_L" d="M-100,0H100" transform="rotate(-45)" />
-			<text y="125" fill="#000" stroke="none">Movement</text>
-		</g>
-
-		<g transform="translate( 105 -325 )">
-			<path id="gyro_x_L" d="M-100,0H100" />
-			<path id="gyro_y_L" d="M-100,0H100" transform="rotate(90)" />
-			<path id="gyro_z_L" d="M-100,0H100" transform="rotate(-45)" />
-			<text y="125" fill="#000" stroke="none">Spinning</text>
-		</g>
+	<g transform="translate( 0 -230 )" stroke="#000" stroke-width="2" stroke-linejoin="round">
+		<path id="cube_L" d="M0,0" />
 	</g>
 
-	<g style="font: 15px monospace" fill="#000">
-		<text id="raw_0_L" y="-180"></text>
-		<text id="raw_1_L" y="-165"></text>
-		<text id="raw_2_L" y="-150"></text>
-		<text id="raw_3_L" y="-135"></text>
-		<text id="raw_4_L" y="-120"></text>
+	<g transform="translate( 0 -85 )" style="font: 15px monospace" fill="#000">
+		<text id="raw_0_L"></text>
+		<text id="raw_1_L" y="15"></text>
+		<text id="raw_2_L" y="30"></text>
+		<text id="raw_3_L" y="45"></text>
+		<text id="raw_4_L" y="60"></text>
 	</g>
 
 	<a href="#" onclick="request_controller( 3653 )" id="add_left" style="opacity: 0; transition: opacity 1s">
@@ -413,24 +487,26 @@ addEventListener( 'DOMContentLoaded', async () => {
 </g>
 
 <g transform="translate( 225 0 )">
-	<rect x="-105" y="-105" width="210" height="210" rx="35" stroke-width="10" stroke="#000" />
-	<circle id="stick_R" r="10" stroke="#000" fill="#aaa" />
+	<g transform="translate( 0, 95 )">
+		<rect x="-105" y="-105" width="210" height="210" rx="35" stroke-width="10" stroke="#000" />
+		<circle id="stick_R" r="10" stroke="#000" fill="#aaa" />
+	</g>
 
-	<g transform="translate( -155 -30 )">
+	<g transform="translate( -155 65 )">
 		<circle id="upper_R" r="20" stroke="#000" fill="#aaa" />
 		<circle r="10" stroke="#fff" />
 	</g>
 
-	<g transform="translate( -155 30 )">
+	<g transform="translate( -155 125 )">
 		<circle id="lower_R" r="20" stroke="#000" fill="#aaa" />
 		<path d="M-10,-10l20,20m0,-20l-20,20" stroke="#fff" />
 	</g>
 
-	<circle id="menu_R" cx="0" cy="155" r="20" stroke="#000" fill="#aaa" />
+	<circle id="menu_R" cx="0" cy="250" r="20" stroke="#000" fill="#aaa" />
 
-	<rect id="option_R" x="135" y="-50" width="40" height="100" rx="20" fill="#aaa" stroke="#000" />
+	<rect id="option_R" x="135" y="45" width="40" height="100" rx="20" fill="#aaa" stroke="#000" />
 
-	<g transform="translate( -180 220 )">
+	<g transform="translate( -180 300 )">
 		<path id="trigger_touch_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="trigger_cap_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<path id="trigger_pull_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0f0" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
@@ -438,14 +514,14 @@ addEventListener( 'DOMContentLoaded', async () => {
 		<text x="180" y="7.5" fill="#000">Trigger</text>
 	</g>
 
-	<g transform="translate( -180 280 )">
+	<g transform="translate( -180 350 )">
 		<path id="grip_touch_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="grip_cap_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#f00" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<rect id="grip_R" x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
 		<text x="180" y="7.5" fill="#000">Grip</text>
 	</g>
 
-	<g transform="translate( -180 340 )">
+	<g transform="translate( -180 400 )">
 		<path d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#aaa" />
 		<path id="battery_R" d="M0,0h360" stroke-width="40" stroke-linecap="round" stroke="#0ff" stroke-dasharray="0 1000" style="mix-blend-mode: lighten" />
 		<rect x="-20" y="-20" width="400" height="40" rx="20" stroke="#000" />
@@ -455,28 +531,16 @@ addEventListener( 'DOMContentLoaded', async () => {
 		<text fill="#000" x="180" y="7.5">Battery</text>
 	</g>
 
-	<g stroke-width="10" stroke="#000" stroke-dasharray="0 99 2 1000">
-		<g transform="translate( 105 -325 )">
-			<path id="accel_x_R" d="M-100,0H100" />
-			<path id="accel_y_R" d="M-100,0H100" transform="rotate(90)" />
-			<path id="accel_z_R" d="M-100,0H100" transform="rotate(-45)" />
-			<text y="125" fill="#000" stroke="none">Movement</text>
-		</g>
-
-		<g transform="translate( -105 -325 )">
-			<path id="gyro_x_R" d="M-100,0H100" />
-			<path id="gyro_y_R" d="M-100,0H100" transform="rotate(90)" />
-			<path id="gyro_z_R" d="M-100,0H100" transform="rotate(-45)" />
-			<text y="125" fill="#000" stroke="none">Spinning</text>
-		</g>
+	<g transform="translate( 0 -230 )" stroke="#000" stroke-width="2" stroke-linejoin="round">
+		<path id="cube_R" d="M0,0" />
 	</g>
 
-	<g style="font: 15px monospace" fill="#000">
-		<text id="raw_0_R" y="-180"></text>
-		<text id="raw_1_R" y="-165"></text>
-		<text id="raw_2_R" y="-150"></text>
-		<text id="raw_3_R" y="-135"></text>
-		<text id="raw_4_R" y="-120"></text>
+	<g transform="translate( 0, -85 )" style="font: 15px monospace" fill="#000">
+		<text id="raw_0_R"></text>
+		<text id="raw_1_R" y="15"></text>
+		<text id="raw_2_R" y="30"></text>
+		<text id="raw_3_R" y="45"></text>
+		<text id="raw_4_R" y="60"></text>
 	</g>
 
 	<a href="#" onclick="request_controller( 3654 )" id="add_right" style="opacity: 0; transition: opacity 1s">
