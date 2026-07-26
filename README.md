@@ -1,3 +1,7 @@
+**I have moved on from maintaining this project. I will still review and accept PR's, however I am not actively developing new code for this.**
+
+#
+
 This is THE FIRST _FULLY_ open source project working on reverse engineering the PSVR2 Controllers with adaptive trigger support. Check out some of the visuals below!
 - https://awesometornado.github.io/PSVR2-controller-explorer/dual_visualizer.html
 - https://awesometornado.github.io/PSVR2-controller-explorer/rotation_visualizer.html
